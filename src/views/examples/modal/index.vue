@@ -68,7 +68,7 @@
       </div>
     </div>
 
-    <ProModal
+    <Modal
       v-model:open="modalOpen"
       :title="$t('exampleModal.modalTitle')"
       :width="modalWidth"
@@ -92,14 +92,7 @@
         <h3>{{ $t('exampleModal.contentTitle') }}</h3>
         <p>{{ $t('exampleModal.contentDescription') }}</p>
 
-        <a-form layout="vertical">
-          <a-form-item :label="$t('exampleModal.formKeyword')">
-            <a-input :placeholder="$t('exampleModal.formKeywordPlaceholder')" />
-          </a-form-item>
-          <a-form-item :label="$t('exampleModal.formRemark')">
-            <a-textarea :rows="3" :placeholder="$t('exampleModal.formRemarkPlaceholder')" />
-          </a-form-item>
-        </a-form>
+        <SuperForm @register="registerModalForm" />
 
         <div class="flex items-center gap-3 whitespace-nowrap">
           <span>{{ $t('exampleModal.dataCount') }}</span>
@@ -130,15 +123,16 @@
           <a-button type="primary" @click="handleConfirm">{{ $t('common.confirm') }}</a-button>
         </a-space>
       </template>
-    </ProModal>
+    </Modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { message } from 'antdv-next';
+import { SuperForm, useForm } from 'superform-antdv';
 import { computed, ref } from 'vue';
 
-import ProModal from '@/components/Pro/ProModal/index.vue';
+import Modal from '@/components/Native/Modal/index.vue';
 import { $t } from '@/locales';
 
 const modalOpen = ref(false);
@@ -173,6 +167,24 @@ const handleConfirm = () => {
   message.success($t('exampleModal.confirmSuccess'));
   modalOpen.value = false;
 };
+const [registerModalForm] = useForm({
+  subSpan: 24,
+  attrs: { layout: 'vertical' },
+  subItems: [
+    {
+      type: 'Input',
+      field: 'keyword',
+      label: () => $t('exampleModal.formKeyword'),
+      dynamicAttrs: () => ({ placeholder: $t('exampleModal.formKeywordPlaceholder') }),
+    },
+    {
+      type: 'TextArea',
+      field: 'remark',
+      label: () => $t('exampleModal.formRemark'),
+      dynamicAttrs: () => ({ rows: 3, placeholder: $t('exampleModal.formRemarkPlaceholder') }),
+    },
+  ],
+});
 </script>
 
 <style scoped lang="scss">

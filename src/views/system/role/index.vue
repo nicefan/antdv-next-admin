@@ -1,54 +1,67 @@
 <template>
   <div class="page-container">
-    <ProTable
+    <SuperTable
       ref="tableRef"
-      :columns="columns"
-      :request="fetchTableData"
-      :toolbar="toolbarConfig"
-      :search="{
-        formItems: searchFormItems,
-        labelWidth: 6,
-        defaultCollapsed: true,
+      :schema="{
+        slots: { extra: 'extra' },
+        columns: columns,
+        apis: { query: fetchTableData },
+        params: nativeQuery1.params,
+        searchForm: { subItems: searchFormItems, limit: 2 },
+        pagination: {},
+        indexColumn: false,
+        title: toolbarConfig.title,
+        attrs: {
+          onChange: nativeQuery1.onChange,
+          tableTools: 'actions' in toolbarConfig ? toolbarConfig.actions : undefined,
+          onReload: () => tableRef?.reload(),
+          rowKey: 'id',
+        },
       }"
-      row-key="id"
     >
-      <template #toolbar-actions>
+      <template #extra>
         <a-button type="primary" @click="handleCreate">
           <PlusOutlined /> {{ $t('role.createRole') }}
         </a-button>
       </template>
-    </ProTable>
+    </SuperTable>
 
-    <ProFormModal
+    <NativeModal
       v-model:open="modalVisible"
       :title="editingRoleId ? $t('role.editRole') : $t('role.createRole')"
       :confirm-loading="submitting"
-      :session-key="formSessionKey"
-      :form-items="formItems"
-      :initial-values="formData"
-      :grid="{ cols: 2, gutter: 16 }"
-      :layout="{ layout: 'vertical' }"
       width="820px"
-      @submit="handleSubmit"
       @cancel="handleCancel"
-      @closed="finishFormClose"
-    />
+      @ok="submitEditForm1"
+      :after-close="finishFormClose"
+    >
+      <SuperForm
+        ref="editFormRef1"
+        :key="formSessionKey"
+        :schema="{
+          dataSource: formData,
+          subSpan: 12,
+          attrs: { layout: 'vertical' },
+          subItems: formItems,
+        }"
+      />
+    </NativeModal>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { RoleInput } from '@/api/generated/admin/data-contracts';
 import type { Permission, Role } from '@/types/auth';
-import type { ProFormItem, ProTableColumn } from '@/types/pro';
 import type { TreeSelectProps } from 'antdv-next';
+import type { UniOption, ExtColumnsItem } from 'superform-antdv';
 
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@antdv-next/icons';
 import { message, Modal, Tag } from 'antdv-next';
+import { SuperTable, SuperForm, SuperButtons } from 'superform-antdv';
 import { computed, h, onMounted, ref } from 'vue';
 
-import { getPermissionTree } from '@/api/permission';
-import { createRole, deleteRole, getRoleList, updateRole } from '@/api/role';
-import ProFormModal from '@/components/Pro/ProFormModal/index.vue';
-import ProTable from '@/components/Pro/ProTable/index.vue';
+import { permissionsApi } from '@/api/generated/admin/Permission';
+import { rolesApi } from '@/api/generated/admin/Role';
 import { useCrudFormSession } from '@/composables/useCrudFormSession';
 import { $t, getLocale } from '@/locales';
 import { resolveLocalizedText } from '@/utils/localizedText';
@@ -69,8 +82,8 @@ type PermissionOption = {
 };
 
 const tableRef = ref<{
-  refresh: () => void;
-  reload: () => void;
+  reload: () => Promise<unknown>;
+  query: () => Promise<unknown>;
 } | null>(null);
 const {
   open: modalVisible,
@@ -88,7 +101,7 @@ const permissionTree = ref<Permission[]>([]);
 
 const toolbarConfig = computed(() => ({
   title: $t('role.title'),
-  subTitle: 'ProTable + ProForm',
+  subTitle: 'SuperTable + SuperForm',
   actions: ['refresh', 'density', 'columnSetting'] as Array<
     'refresh' | 'density' | 'columnSetting'
   >,
@@ -155,95 +168,87 @@ const renderPermissionTreeTitle: NonNullable<TreeSelectProps['treeTitleRender']>
   );
 };
 
-const searchFormItems = computed<ProFormItem[]>(() => [
-  { name: 'name', label: $t('role.name'), type: 'input' },
-  { name: 'code', label: $t('role.code'), type: 'input' },
+const searchFormItems = computed<UniOption[]>(() => [
+  { type: 'Input', field: 'name', label: () => $t('role.name') },
+  { type: 'Input', field: 'code', label: () => $t('role.code') },
 ]);
 
-const columns = computed<ProTableColumn[]>(() => [
+const columns = computed<ExtColumnsItem[]>(() => [
+  { field: 'name', label: () => $t('role.name'), columnProps: { width: 200 } },
+  { field: 'code', label: () => $t('role.code'), columnProps: { width: 200 } },
+  { field: 'description', label: () => $t('role.description') },
+  { field: 'permissionCount', label: () => $t('role.permissions'), columnProps: { width: 120 } },
   {
-    title: $t('role.name'),
-    dataIndex: 'name',
-    width: 200,
+    field: 'updatedAt',
+    label: () => $t('common.updateTime'),
+    viewRender: ({ text }: { text: unknown }) =>
+      h(ValueView, { value: text, type: 'dateTime', enum: undefined, valueTypeProps: undefined }),
+    columnProps: { width: 200 },
   },
   {
-    title: $t('role.code'),
-    dataIndex: 'code',
-    width: 200,
-  },
-  {
-    title: $t('role.description'),
-    dataIndex: 'description',
-  },
-  {
-    title: $t('role.permissions'),
-    dataIndex: 'permissionCount',
-    width: 120,
-  },
-  {
-    title: $t('common.updateTime'),
-    dataIndex: 'updatedAt',
-    width: 200,
-    valueType: 'dateTime',
-  },
-  {
-    title: $t('common.actions'),
-    dataIndex: 'action',
-    width: 160,
-    fixed: 'right',
-    actions: [
-      {
-        label: $t('common.edit'),
-        icon: EditOutlined,
-        onClick: (record) => handleEdit(record as unknown as Role),
-      },
-      {
-        label: $t('common.delete'),
-        icon: DeleteOutlined,
-        danger: true,
-        confirm: $t('role.confirmDelete'),
-        onClick: (record) => handleDelete(record as unknown as Role),
-      },
-    ],
+    field: 'action',
+    label: () => $t('common.actions'),
+    viewRender: ({ record: row }: { record: Record<string, unknown> }) =>
+      h(SuperButtons, {
+        buttonProps: { type: 'link', size: 'small' },
+        effectData: { record: row },
+        actions: [
+          {
+            label: $t('common.edit'),
+            icon: () => h(EditOutlined),
+            onClick: ({ record }: { record: Record<string, unknown> }) =>
+              handleEdit(record as unknown as Role),
+          },
+          {
+            label: $t('common.delete'),
+            icon: () => h(DeleteOutlined),
+            onClick: ({ record }: { record: Record<string, unknown> }) =>
+              handleDelete(record as unknown as Role),
+            attrs: { danger: true },
+          },
+        ],
+      }),
+    columnProps: { width: 160, fixed: 'right' },
   },
 ]);
 
-const formItems = computed<ProFormItem[]>(() => [
+const formItems = computed<UniOption[]>(() => [
+  { type: 'Input', field: 'name', label: () => $t('role.name'), required: true },
   {
-    name: 'name',
-    label: $t('role.name'),
-    type: 'input',
+    type: 'Input',
+    field: 'code',
+    label: () => $t('role.code'),
     required: true,
-  },
-  {
-    name: 'code',
-    label: $t('role.code'),
-    type: 'input',
-    required: true,
-    props: {
-      disabled: Boolean(editingRoleId.value),
-    },
     rules: [
       { required: true, message: $t('role.codeRequired') },
       { pattern: /^[a-zA-Z0-9_.-]+$/, message: $t('role.codePattern') },
     ],
+    dynamicAttrs: () => ({
+      disabled: Boolean(editingRoleId.value),
+    }),
   },
   {
-    name: 'description',
-    label: $t('role.description'),
-    type: 'textarea',
-    colSpan: 2,
-    props: {
+    type: 'TextArea',
+    field: 'description',
+    label: () => $t('role.description'),
+    span: 2 * 12,
+    dynamicAttrs: () => ({
       rows: 3,
-    },
+    }),
   },
   {
-    name: 'permissionIds',
-    label: $t('role.permissions'),
-    type: 'treeSelect',
-    colSpan: 2,
-    options: permissionOptions.value,
-    props: {
+    type: 'TreeSelect',
+    field: 'permissionIds',
+    label: () => $t('role.permissions'),
+    span: 2 * 12,
+    options: { source: () => permissionOptions.value },
+    rules: [
+      {
+        validator: (_context: unknown, value: unknown) =>
+          Array.isArray(value) && value.length > 0 ? true : new Error($t('role.selectPermissions')),
+      },
+    ],
+    dynamicAttrs: () => ({
       class: 'permission-role-tree-select',
       treeCheckable: true,
       allowClear: true,
@@ -251,8 +256,7 @@ const formItems = computed<ProFormItem[]>(() => [
       showCheckedStrategy: 'SHOW_PARENT',
       maxTagCount: 2,
       treeTitleRender: renderPermissionTreeTitle,
-    },
-    rules: [{ type: 'array', required: true, message: $t('role.selectPermissions') }],
+    }),
   },
 ]);
 
@@ -266,36 +270,40 @@ function createDefaultFormValues(): RoleFormValues {
 }
 
 const fetchPermissionTreeData = async () => {
-  const response = await getPermissionTree();
-  permissionTree.value = response.data;
+  const response = await permissionsApi.getPermissionTree();
+  permissionTree.value = response;
 };
 
-const fetchTableData = async (params: Record<string, unknown>) => {
-  const response = await getRoleList({
-    current: Number(params.current || 1),
-    pageSize: Number(params.pageSize || 10),
-    name: (params.name as string)?.trim() || undefined,
-    code: (params.code as string)?.trim() || undefined,
-  });
+const fetchTableData = async (params: Record<string, unknown>, config?: RequestConfig) => {
+  const response = await rolesApi.getRoleList(
+    {
+      current: Number(params.current || 1),
+      pageSize: Number(params.pageSize || 10),
+      name: (params.name as string)?.trim() || undefined,
+      code: (params.code as string)?.trim() || undefined,
+    },
+    config,
+  );
 
-  const list = response.data.list.map((item) => ({
+  const list = response.list.map((item) => ({
     ...item,
     permissionCount: item.permissions?.length || 0,
   }));
 
   return {
-    data: list,
-    total: response.data.total,
-    success: true,
+    records: list,
+    total: response.total,
+    current: Number(params.current ?? 1),
+    size: Number(params.pageSize ?? 10),
   };
 };
 
 const refreshTable = () => {
-  tableRef.value?.refresh();
+  tableRef.value?.reload();
 };
 
 const reloadTable = () => {
-  tableRef.value?.reload();
+  tableRef.value?.query();
 };
 
 const handleCreate = () => {
@@ -321,7 +329,7 @@ const handleDelete = async (record: Role) => {
     title: $t('role.deleteRole'),
     content: $t('role.confirmDelete'),
     onOk: async () => {
-      await deleteRole(record.id);
+      await rolesApi.deleteRole(record.id);
       message.success($t('common.success'));
       refreshTable();
     },
@@ -337,7 +345,7 @@ const handleSubmit = async (rawValues: Record<string, unknown>) => {
     .map((id) => permissionMap.value.get(id))
     .filter((permission): permission is Permission => Boolean(permission));
 
-  const payload: Partial<Role> = {
+  const payload: RoleInput = {
     name: values.name?.trim(),
     code: values.code?.trim(),
     description: values.description?.trim(),
@@ -347,11 +355,11 @@ const handleSubmit = async (rawValues: Record<string, unknown>) => {
   submitting.value = true;
   try {
     if (editingRoleId.value) {
-      await updateRole(editingRoleId.value, payload);
+      await rolesApi.updateRole(editingRoleId.value, payload);
       message.success($t('role.updateSuccess'));
       refreshTable();
     } else {
-      await createRole(payload);
+      await rolesApi.createRole(payload);
       message.success($t('role.createSuccess'));
       reloadTable();
     }
@@ -364,6 +372,18 @@ const handleSubmit = async (rawValues: Record<string, unknown>) => {
 onMounted(async () => {
   await fetchPermissionTreeData();
 });
+
+const nativeQuery1 = useTableParams(() => columns.value);
+const editFormRef1 = ref<{ submit: () => Promise<Record<string, unknown>> }>();
+async function submitEditForm1(): Promise<void> {
+  if (!editFormRef1.value) return;
+  const values = await editFormRef1.value.submit();
+  await handleSubmit(values);
+}
+
+import ValueView from '@/components/Display/ValueView.vue';
+import NativeModal from '@/components/Native/Modal/index.vue';
+import { useTableParams } from '@/composables/useTableParams';
 </script>
 
 <style>

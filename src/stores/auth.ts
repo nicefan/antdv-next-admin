@@ -3,6 +3,7 @@ import type { User, Role, Permission } from '@/types/auth';
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 
+import { referenceCache } from '@/api/cache/scope';
 import avatarImg from '@/assets/images/avatar-256.png';
 import { ALL_PERMISSION } from '@/constants/permissions';
 
@@ -84,6 +85,12 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null);
   const roles = ref<Role[]>([]);
   const permissions = ref<Permission[]>([]);
+  let sessionVersion = 0;
+  const getSessionVersion = () => sessionVersion;
+  const assertSession = (version: number) => {
+    // 身份变化后，旧登录或刷新结果按取消处理，不能回填新会话。
+    if (version !== sessionVersion) throw { name: 'AbortError', message: '' };
+  };
 
   const savedExpires = localStorage.getItem(TOKEN_EXPIRES_KEY);
   if (savedExpires) {
@@ -155,34 +162,41 @@ export const useAuthStore = defineStore('auth', () => {
   };
 
   const login = async (username: string, password: string): Promise<void> => {
-    const { login: loginApi, getUserInfo } = await import('@/api/auth');
+    logout();
+    const version = sessionVersion;
+    const { authApi } = await import('@/api/generated/admin/Auth');
+    assertSession(version);
 
-    if (token.value || user.value) {
-      logout();
-    }
+    const loginResult = await authApi.login({ username, password });
+    assertSession(version);
+    setToken(loginResult.token, loginResult.refreshToken, loginResult.expiresIn);
 
-    const loginResult = await loginApi({ username, password });
-    setToken(loginResult.data.token, loginResult.data.refreshToken, loginResult.data.expiresIn);
-
-    const userInfo = await getUserInfo();
-    setUserInfo(userInfo.data);
+    const userInfo = await authApi.getUserInfo();
+    assertSession(version);
+    setUserInfo(userInfo);
   };
 
   const logout = () => {
+    sessionVersion++;
+    referenceCache.clearAll();
     setToken(null, null);
     setUserInfo(null);
   };
 
   const refreshToken = async (): Promise<string> => {
-    const { refreshToken: refreshTokenApi } = await import('@/api/auth');
+    const version = sessionVersion;
+    const savedRefreshToken = refreshTokenValue.value;
+    const { authApi } = await import('@/api/generated/admin/Auth');
+    assertSession(version);
 
-    if (!refreshTokenValue.value) {
-      throw new Error('No refresh token available');
+    if (!savedRefreshToken) {
+      throw { code: 401, message: '登录已过期，请重新登录' };
     }
 
-    const result = await refreshTokenApi(refreshTokenValue.value);
-    setToken(result.data.token, result.data.refreshToken, result.data.expiresIn);
-    return result.data.token;
+    const result = await authApi.refreshToken({ refreshToken: savedRefreshToken });
+    assertSession(version);
+    setToken(result.token, result.refreshToken, result.expiresIn);
+    return result.token;
   };
 
   const hasRole = (role: string): boolean => {
@@ -250,6 +264,7 @@ export const useAuthStore = defineStore('auth', () => {
     isLoggedIn,
     userRoles,
     userPermissions,
+    getSessionVersion,
     setToken,
     setUserInfo,
     login,

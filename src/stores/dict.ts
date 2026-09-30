@@ -1,19 +1,20 @@
-import type { DictData, DictGroup } from "@/types/dict";
+import type { DictData, DictGroup } from '@/types/dict';
 
-import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { defineStore } from 'pinia';
+import { ref, computed, shallowRef, getCurrentScope } from 'vue';
 
-import { getAllDictData } from "@/api/dict";
+import { clearDictCache, dictDataCache } from '@/api/cache/dict';
 
-export const useDictStore = defineStore("dict", () => {
-  // 所有字典数据
-  const dictData = ref<DictData[]>([]);
-
-  // 是否已加载
-  const loaded = ref(false);
-
-  // 是否正在加载
-  const loading = ref(false);
+export const useDictStore = defineStore('dict', () => {
+  // 直接订阅公共缓存；失效和退出登录会同步清空字典展示。
+  const storeScope = getCurrentScope();
+  const entry = shallowRef<ReturnType<typeof dictDataCache.useEntry>>();
+  const dictData = computed<DictData[]>(() =>
+    (entry.value?.result ?? []).filter((item) => item.status === 'enabled'),
+  );
+  const loaded = computed(() => entry.value?.result !== undefined);
+  const pendingLoads = ref(0);
+  const loading = computed(() => pendingLoads.value > 0);
 
   // 按类型分组的字典数据
   const dictGroup = computed<DictGroup>(() => {
@@ -34,30 +35,20 @@ export const useDictStore = defineStore("dict", () => {
   /**
    * 加载所有字典数据
    */
-  const loadDictData = async (force = false) => {
-    // 如果已加载且不强制刷新，直接返回
-    if (loaded.value && !force) {
-      return;
+  const loadDictData = async (force = false): Promise<void> => {
+    if (force) dictDataCache.clear();
+    // useEntry 会立即请求，延迟到登录后加载；订阅归属 Store，页面卸载不会丢失更新。
+    if (!entry.value) {
+      entry.value = storeScope?.run(() => dictDataCache.useEntry()) ?? dictDataCache.useEntry();
     }
-
-    // 如果正在加载，避免重复请求
-    if (loading.value) {
-      return;
-    }
-
+    pendingLoads.value += 1;
     try {
-      loading.value = true;
-      const response = await getAllDictData();
-      if (response.code === 200) {
-        dictData.value = response.data.filter(
-          (item: DictData) => item.status === "enabled",
-        );
-        loaded.value = true;
-      }
+      // 每个调用方都等待同一请求完成，避免并发调用提前拿到空选项。
+      await dictDataCache.getResult();
     } catch (error) {
-      console.error("加载字典数据失败:", error);
+      console.error('加载字典数据失败:', error);
     } finally {
-      loading.value = false;
+      pendingLoads.value -= 1;
     }
   };
 
@@ -72,9 +63,7 @@ export const useDictStore = defineStore("dict", () => {
    * 根据类型和值获取标签
    */
   const getDictLabel = (typeCode: string, value: string): string => {
-    const dict = dictGroup.value[typeCode]?.find(
-      (item) => item.value === value,
-    );
+    const dict = dictGroup.value[typeCode]?.find((item) => item.value === value);
     return dict?.label || value;
   };
 
@@ -82,9 +71,7 @@ export const useDictStore = defineStore("dict", () => {
    * 根据类型和标签获取值
    */
   const getDictValue = (typeCode: string, label: string): string => {
-    const dict = dictGroup.value[typeCode]?.find(
-      (item) => item.label === label,
-    );
+    const dict = dictGroup.value[typeCode]?.find((item) => item.label === label);
     return dict?.value || label;
   };
 
@@ -109,8 +96,7 @@ export const useDictStore = defineStore("dict", () => {
    * 清空字典数据
    */
   const clearDictData = () => {
-    dictData.value = [];
-    loaded.value = false;
+    clearDictCache();
   };
 
   return {

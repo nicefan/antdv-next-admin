@@ -62,43 +62,39 @@
         :message="$t('examples.scaffold.importExport.importHint')"
       />
 
-      <ProTable
-        layout="content"
-        row-key="code"
-        size="small"
-        :columns="dataColumns"
+      <SuperTable
+        :schema="{
+          columns: dataColumns,
+          pagination: { pageSize: 8 },
+          indexColumn: false,
+          attrs: { tableTools: false, rowKey: 'code', size: 'small' },
+        }"
         :data-source="rows"
-        :search="false"
-        :toolbar="false"
-        :pagination="{ pageSize: 8 }"
-        :show-index-column="false"
       />
 
       <a-divider />
 
-      <ProTable
-        layout="content"
-        row-key="id"
-        size="small"
-        :columns="errorColumns"
+      <SuperTable
+        :schema="{
+          columns: errorColumns,
+          pagination: { pageSize: 6 },
+          indexColumn: false,
+          attrs: { tableTools: false, rowKey: 'id', size: 'small' },
+        }"
         :data-source="importErrors"
-        :search="false"
-        :toolbar="false"
-        :pagination="{ pageSize: 6 }"
-        :show-index-column="false"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { ExtColumnsItem } from 'superform-antdv';
+
 import { DownloadOutlined, UploadOutlined } from '@antdv-next/icons';
 import { message } from 'antdv-next';
+import { SuperTable } from 'superform-antdv';
 import { computed, ref } from 'vue';
 
-import type { ProTableColumn } from '@/types/pro';
-
-import ProTable from '@/components/Pro/ProTable/index.vue';
 import { $t } from '@/locales';
 
 interface ProductRow {
@@ -138,18 +134,46 @@ const lastSummary = ref<ImportSummary>({
   failed: 0,
 });
 
-const dataColumns = computed<ProTableColumn[]>(() => [
-  { title: $t('examples.scaffold.importExport.colCode'), dataIndex: 'code', width: 140 },
-  { title: $t('examples.scaffold.importExport.colName'), dataIndex: 'name', width: 220 },
-  { title: $t('examples.scaffold.importExport.colCategory'), dataIndex: 'category', width: 160 },
-  { title: $t('examples.scaffold.importExport.colPrice'), dataIndex: 'price', width: 120 },
-  { title: $t('examples.scaffold.importExport.colStock'), dataIndex: 'stock', width: 120 },
+const dataColumns = computed<ExtColumnsItem[]>(() => [
+  {
+    field: 'code',
+    label: () => $t('examples.scaffold.importExport.colCode'),
+    columnProps: { width: 140 },
+  },
+  {
+    field: 'name',
+    label: () => $t('examples.scaffold.importExport.colName'),
+    columnProps: { width: 220 },
+  },
+  {
+    field: 'category',
+    label: () => $t('examples.scaffold.importExport.colCategory'),
+    columnProps: { width: 160 },
+  },
+  {
+    field: 'price',
+    label: () => $t('examples.scaffold.importExport.colPrice'),
+    columnProps: { width: 120 },
+  },
+  {
+    field: 'stock',
+    label: () => $t('examples.scaffold.importExport.colStock'),
+    columnProps: { width: 120 },
+  },
 ]);
 
-const errorColumns = computed<ProTableColumn[]>(() => [
-  { title: $t('examples.scaffold.importExport.errorRowNo'), dataIndex: 'rowNo', width: 100 },
-  { title: $t('examples.scaffold.importExport.errorReason'), dataIndex: 'reason', width: 260 },
-  { title: $t('examples.scaffold.importExport.errorRaw'), dataIndex: 'raw' },
+const errorColumns = computed<ExtColumnsItem[]>(() => [
+  {
+    field: 'rowNo',
+    label: () => $t('examples.scaffold.importExport.errorRowNo'),
+    columnProps: { width: 100 },
+  },
+  {
+    field: 'reason',
+    label: () => $t('examples.scaffold.importExport.errorReason'),
+    columnProps: { width: 260 },
+  },
+  { field: 'raw', label: () => $t('examples.scaffold.importExport.errorRaw') },
 ]);
 
 function downloadTemplate() {

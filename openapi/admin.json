@@ -1,0 +1,3942 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "脚手架 Mock API 契约",
+    "version": "1.0.0",
+    "description": "对应当前 Mock；正式项目替换为后端 OpenAPI，禁止手改生成 API。"
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["auth"],
+        "operationId": "login",
+        "summary": "login",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultLogin"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginParams"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["auth"],
+        "operationId": "logout",
+        "summary": "logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultLogout"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/info": {
+      "get": {
+        "tags": ["auth"],
+        "operationId": "getUserInfo",
+        "summary": "getUserInfo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetUserInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["auth"],
+        "operationId": "refreshToken",
+        "summary": "refreshToken",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultRefreshToken"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenParams"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["user"],
+        "operationId": "getUserList",
+        "summary": "getUserList",
+        "parameters": [
+          {
+            "name": "current",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gender",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "sorter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetUserList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["user"],
+        "operationId": "createUser",
+        "summary": "createUser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultCreateUser"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": ["user"],
+        "operationId": "getUserById",
+        "summary": "getUserById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetUserById"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["user"],
+        "operationId": "updateUser",
+        "summary": "updateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultUpdateUser"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserInput"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["user"],
+        "operationId": "deleteUser",
+        "summary": "deleteUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultDeleteUser"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/roles": {
+      "get": {
+        "tags": ["role"],
+        "operationId": "getRoleList",
+        "summary": "getRoleList",
+        "parameters": [
+          {
+            "name": "current",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetRoleList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["role"],
+        "operationId": "createRole",
+        "summary": "createRole",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultCreateRole"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/roles/{id}": {
+      "get": {
+        "tags": ["role"],
+        "operationId": "getRoleById",
+        "summary": "getRoleById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetRoleById"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["role"],
+        "operationId": "updateRole",
+        "summary": "updateRole",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultUpdateRole"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleInput"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["role"],
+        "operationId": "deleteRole",
+        "summary": "deleteRole",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultDeleteRole"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/change-password": {
+      "post": {
+        "tags": ["user"],
+        "operationId": "changePassword",
+        "summary": "changePassword",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultChangePassword"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordParams"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/permissions": {
+      "get": {
+        "tags": ["permission"],
+        "operationId": "getPermissionList",
+        "summary": "getPermissionList",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetPermissionList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["permission"],
+        "operationId": "createPermission",
+        "summary": "createPermission",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultCreatePermission"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/permissions/tree": {
+      "get": {
+        "tags": ["permission"],
+        "operationId": "getPermissionTree",
+        "summary": "getPermissionTree",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetPermissionTree"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/permissions/user": {
+      "get": {
+        "tags": ["permission"],
+        "operationId": "getUserPermissions",
+        "summary": "getUserPermissions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetUserPermissions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/permissions/{id}": {
+      "get": {
+        "tags": ["permission"],
+        "operationId": "getPermissionById",
+        "summary": "getPermissionById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetPermissionById"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["permission"],
+        "operationId": "updatePermission",
+        "summary": "updatePermission",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultUpdatePermission"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionInput"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["permission"],
+        "operationId": "deletePermission",
+        "summary": "deletePermission",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultDeletePermission"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dept/tree": {
+      "get": {
+        "tags": ["dept"],
+        "operationId": "getDeptTree",
+        "summary": "getDeptTree",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["enabled", "disabled"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetDeptTree"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dept/list": {
+      "get": {
+        "tags": ["dept"],
+        "operationId": "getDeptList",
+        "summary": "getDeptList",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["enabled", "disabled"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetDeptList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dept": {
+      "post": {
+        "tags": ["dept"],
+        "operationId": "createDept",
+        "summary": "createDept",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultCreateDept"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dept/{id}": {
+      "put": {
+        "tags": ["dept"],
+        "operationId": "updateDept",
+        "summary": "updateDept",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultUpdateDept"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentInput"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["dept"],
+        "operationId": "deleteDept",
+        "summary": "deleteDept",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultDeleteDept"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dict/types": {
+      "get": {
+        "tags": ["dict"],
+        "operationId": "getDictTypes",
+        "summary": "getDictTypes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetDictTypes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dict/type/list": {
+      "get": {
+        "tags": ["dict"],
+        "operationId": "getDictTypeList",
+        "summary": "getDictTypeList",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["enabled", "disabled"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetDictTypeList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dict/data/all": {
+      "get": {
+        "tags": ["dict"],
+        "operationId": "getAllDictData",
+        "summary": "getAllDictData",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetAllDictData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dict/data/{typeCode}": {
+      "get": {
+        "tags": ["dict"],
+        "operationId": "getDictDataByType",
+        "summary": "getDictDataByType",
+        "parameters": [
+          {
+            "name": "typeCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetDictDataByType"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dict/data/list": {
+      "get": {
+        "tags": ["dict"],
+        "operationId": "getDictDataList",
+        "summary": "getDictDataList",
+        "parameters": [
+          {
+            "name": "typeCode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "label",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "value",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["enabled", "disabled"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetDictDataList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dict/type": {
+      "post": {
+        "tags": ["dict"],
+        "operationId": "createDictType",
+        "summary": "createDictType",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultCreateDictType"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictTypeInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dict/type/{id}": {
+      "put": {
+        "tags": ["dict"],
+        "operationId": "updateDictType",
+        "summary": "updateDictType",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultUpdateDictType"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictTypeInput"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["dict"],
+        "operationId": "deleteDictType",
+        "summary": "deleteDictType",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultDeleteDictType"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dict/data": {
+      "post": {
+        "tags": ["dict"],
+        "operationId": "createDictData",
+        "summary": "createDictData",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultCreateDictData"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictDataInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dict/data/{id}": {
+      "put": {
+        "tags": ["dict"],
+        "operationId": "updateDictData",
+        "summary": "updateDictData",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultUpdateDictData"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictDataInput"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["dict"],
+        "operationId": "deleteDictData",
+        "summary": "deleteDictData",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultDeleteDictData"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/list": {
+      "get": {
+        "tags": ["config"],
+        "operationId": "getConfigList",
+        "summary": "getConfigList",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetConfigList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/key/{key}": {
+      "get": {
+        "tags": ["config"],
+        "operationId": "getConfigByKey",
+        "summary": "getConfigByKey",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetConfigByKey"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config": {
+      "post": {
+        "tags": ["config"],
+        "operationId": "createConfig",
+        "summary": "createConfig",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultCreateConfig"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SysConfigInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/{id}": {
+      "put": {
+        "tags": ["config"],
+        "operationId": "updateConfig",
+        "summary": "updateConfig",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultUpdateConfig"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SysConfigInput"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["config"],
+        "operationId": "deleteConfig",
+        "summary": "deleteConfig",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultDeleteConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/file/list": {
+      "get": {
+        "tags": ["file"],
+        "operationId": "getFileList",
+        "summary": "getFileList",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ext",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "storage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetFileList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/file/{id}": {
+      "delete": {
+        "tags": ["file"],
+        "operationId": "deleteFile",
+        "summary": "deleteFile",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultDeleteFile"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/log/operation/list": {
+      "get": {
+        "tags": ["log"],
+        "operationId": "getOperationLogList",
+        "summary": "getOperationLogList",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "module",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startTime",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endTime",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetOperationLogList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/log/operation/clear": {
+      "delete": {
+        "tags": ["log"],
+        "operationId": "clearOperationLog",
+        "summary": "clearOperationLog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultClearOperationLog"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/log/login/list": {
+      "get": {
+        "tags": ["log"],
+        "operationId": "getLoginLogList",
+        "summary": "getLoginLogList",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startTime",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endTime",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultGetLoginLogList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/log/login/clear": {
+      "delete": {
+        "tags": ["log"],
+        "operationId": "clearLoginLog",
+        "summary": "clearLoginLog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjaxResultClearLoginLog"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LoginParams": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "remember": {
+            "type": "boolean"
+          }
+        },
+        "required": ["username", "password"]
+      },
+      "LoginResult": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "number"
+          }
+        },
+        "required": ["token"]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "realName": {
+            "type": "string"
+          },
+          "avatar": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string",
+            "enum": ["male", "female"]
+          },
+          "birthDate": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive"]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Role"
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "email",
+          "realName",
+          "avatar",
+          "phone",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "roles",
+          "permissions"
+        ]
+      },
+      "Role": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "code", "description", "permissions", "createdAt", "updatedAt"]
+      },
+      "LocalizedText": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "Permission": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/components/schemas/LocalizedText"
+              }
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "resource": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["menu", "button", "api"]
+          },
+          "parentId": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "component": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive"]
+          },
+          "visible": {
+            "type": "boolean"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            }
+          }
+        },
+        "required": ["id", "name", "code", "description", "resource", "action", "type"]
+      },
+      "Department": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "leader": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["enabled", "disabled"]
+          },
+          "remark": {
+            "type": "string"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "updateTime": {
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Department"
+            }
+          }
+        },
+        "required": ["id", "name", "parentId", "sort", "status", "createTime", "updateTime"]
+      },
+      "DeptQueryParams": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["enabled", "disabled"]
+          }
+        }
+      },
+      "DictType": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["enabled", "disabled"]
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "updateTime": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "code", "status", "createTime", "updateTime"]
+      },
+      "DictData": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "typeCode": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["enabled", "disabled"]
+          },
+          "remark": {
+            "type": "string"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "updateTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "typeCode",
+          "label",
+          "value",
+          "sort",
+          "status",
+          "createTime",
+          "updateTime"
+        ]
+      },
+      "DictGroup": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/DictData"
+          }
+        }
+      },
+      "DictQueryParams": {
+        "type": "object",
+        "properties": {
+          "typeCode": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["enabled", "disabled"]
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          }
+        }
+      },
+      "DictTypeQueryParams": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["enabled", "disabled"]
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          }
+        }
+      },
+      "SysConfig": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "valueType": {
+            "type": "string",
+            "enum": ["string", "number", "boolean", "json"]
+          },
+          "group": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "builtIn": {
+            "type": "boolean"
+          },
+          "sort": {
+            "type": "number"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "updateTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "key",
+          "value",
+          "valueType",
+          "group",
+          "builtIn",
+          "sort",
+          "createTime",
+          "updateTime"
+        ]
+      },
+      "SysConfigQueryParams": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          }
+        }
+      },
+      "SysFile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "originalName": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "ext": {
+            "type": "string"
+          },
+          "storage": {
+            "type": "string",
+            "enum": ["local", "oss", "cos"]
+          },
+          "uploader": {
+            "type": "string"
+          },
+          "remark": {
+            "type": "string"
+          },
+          "createTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "originalName",
+          "path",
+          "size",
+          "mimeType",
+          "ext",
+          "storage",
+          "uploader",
+          "createTime"
+        ]
+      },
+      "SysFileQueryParams": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "ext": {
+            "type": "string"
+          },
+          "storage": {
+            "type": "string"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          }
+        }
+      },
+      "OperationLog": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "module": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["login", "logout", "create", "update", "delete", "export", "import", "other"]
+          },
+          "description": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "ip": {
+            "type": "string"
+          },
+          "browser": {
+            "type": "string"
+          },
+          "os": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["success", "fail"]
+          },
+          "errorMsg": {
+            "type": "string"
+          },
+          "duration": {
+            "type": "number"
+          },
+          "createTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "module",
+          "action",
+          "description",
+          "method",
+          "url",
+          "ip",
+          "browser",
+          "os",
+          "status",
+          "duration",
+          "createTime"
+        ]
+      },
+      "LoginLog": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "ip": {
+            "type": "string"
+          },
+          "browser": {
+            "type": "string"
+          },
+          "os": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["success", "fail"]
+          },
+          "message": {
+            "type": "string"
+          },
+          "createTime": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "username", "ip", "browser", "os", "status", "message", "createTime"]
+      },
+      "OperationLogQueryParams": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "module": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "startTime": {
+            "type": "string"
+          },
+          "endTime": {
+            "type": "string"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          }
+        }
+      },
+      "LoginLogQueryParams": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "ip": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "startTime": {
+            "type": "string"
+          },
+          "endTime": {
+            "type": "string"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          }
+        }
+      },
+      "RefreshTokenParams": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": ["refreshToken"]
+      },
+      "ChangePasswordParams": {
+        "type": "object",
+        "properties": {
+          "oldPassword": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string"
+          }
+        },
+        "required": ["oldPassword", "newPassword"]
+      },
+      "UserInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "realName": {
+            "type": "string"
+          },
+          "avatar": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string",
+            "enum": ["male", "female"]
+          },
+          "birthDate": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive"]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Role"
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            }
+          },
+          "roleIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["username", "realName", "email"]
+      },
+      "RoleInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "permissionIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["name", "code"]
+      },
+      "PermissionInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/components/schemas/LocalizedText"
+              }
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "resource": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["menu", "button", "api"]
+          },
+          "parentId": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "component": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive"]
+          },
+          "visible": {
+            "type": "boolean"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            }
+          }
+        },
+        "required": []
+      },
+      "DepartmentInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "leader": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["enabled", "disabled"]
+          },
+          "remark": {
+            "type": "string"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "updateTime": {
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Department"
+            }
+          }
+        },
+        "required": []
+      },
+      "DictTypeInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["enabled", "disabled"]
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "updateTime": {
+            "type": "string"
+          }
+        },
+        "required": []
+      },
+      "DictDataInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "typeCode": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["enabled", "disabled"]
+          },
+          "remark": {
+            "type": "string"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "updateTime": {
+            "type": "string"
+          }
+        },
+        "required": []
+      },
+      "SysConfigInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "valueType": {
+            "type": "string",
+            "enum": ["string", "number", "boolean", "json"]
+          },
+          "group": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "builtIn": {
+            "type": "boolean"
+          },
+          "sort": {
+            "type": "number"
+          },
+          "createTime": {
+            "type": "string"
+          },
+          "updateTime": {
+            "type": "string"
+          }
+        },
+        "required": []
+      },
+      "UserPage": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "current": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": ["list", "total", "pageSize"]
+      },
+      "RolePage": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Role"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "current": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": ["list", "total", "pageSize"]
+      },
+      "DictTypePage": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictType"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "current": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": ["list", "total", "pageSize"]
+      },
+      "DictDataPage": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictData"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "current": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": ["list", "total", "pageSize"]
+      },
+      "SysConfigPage": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SysConfig"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "current": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": ["list", "total", "pageSize"]
+      },
+      "SysFilePage": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SysFile"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "current": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": ["list", "total", "pageSize"]
+      },
+      "OperationLogPage": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperationLog"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "current": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": ["list", "total", "pageSize"]
+      },
+      "LoginLogPage": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoginLog"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "current": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": ["list", "total", "pageSize"]
+      },
+      "UserQuery": {
+        "type": "object",
+        "properties": {
+          "current": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sorter": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "RoleQuery": {
+        "type": "object",
+        "properties": {
+          "current": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "AjaxResultLogin": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoginResult"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultLogout": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetUserInfo": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultRefreshToken": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoginResult"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetUserList": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserPage"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetUserById": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultCreateUser": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultUpdateUser": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultDeleteUser": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetRoleList": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/RolePage"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetRoleById": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultCreateRole": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultUpdateRole": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultDeleteRole": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultChangePassword": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "PermissionQuery": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "AjaxResultGetPermissionList": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            }
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetPermissionTree": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            }
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetUserPermissions": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            }
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetPermissionById": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Permission"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultCreatePermission": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Permission"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultUpdatePermission": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Permission"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultDeletePermission": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetDeptTree": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Department"
+            }
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetDeptList": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Department"
+            }
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultCreateDept": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Department"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultUpdateDept": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Department"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultDeleteDept": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetDictTypes": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictType"
+            }
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetDictTypeList": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DictTypePage"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetAllDictData": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictData"
+            }
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetDictDataByType": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictData"
+            }
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetDictDataList": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DictDataPage"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultCreateDictType": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DictType"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultUpdateDictType": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DictType"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultDeleteDictType": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultCreateDictData": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DictData"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultUpdateDictData": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DictData"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultDeleteDictData": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetConfigList": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SysConfigPage"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetConfigByKey": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SysConfig"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultCreateConfig": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SysConfig"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultUpdateConfig": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SysConfig"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultDeleteConfig": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetFileList": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SysFilePage"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultDeleteFile": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetOperationLogList": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OperationLogPage"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultClearOperationLog": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultGetLoginLogList": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoginLogPage"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      },
+      "AjaxResultClearLoginLog": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": ["code", "message", "success", "data"]
+      }
+    }
+  }
+}

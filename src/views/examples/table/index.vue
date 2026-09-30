@@ -1,338 +1,272 @@
 <template>
   <div class="page-container">
-    <ProTable
-      :columns="columns"
-      :request="fetchData"
-      :toolbar="{
-        title: $t('exampleTable.userList'),
-        subTitle: $t('exampleTable.subTitle'),
-        actions: ['refresh', 'columnSetting'],
-      }"
-      :search="{
-        formItems: searchFormItems,
-        labelWidth: 80,
-        defaultCollapsed: true,
-      }"
-      :header-filter="{
-        defaultMode: 'server',
-        requestPayload: 'flat',
-      }"
-      row-key="id"
-    >
-      <template #toolbar-actions>
-        <a-button type="primary" @click="handleCreate">
-          <PlusOutlined /> {{ $t('exampleTable.createUser') }}
-        </a-button>
+    <SuperTable @register="registerTable">
+      <template #title>
+        <div class="table-heading">
+          <span>{{ $t('exampleTable.userList') }}</span>
+          <small>{{ $t('exampleTable.subTitle') }}</small>
+          <div ref="toolbarTarget" class="table-toolbar-target" />
+        </div>
       </template>
-
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.dataIndex === 'status'">
-          <a-switch
-            :checked="record.status === 'active'"
-            @change="handleStatusChange(record, $event as boolean)"
-          >
-            <template #checkedChildren>{{ $t('user.active') }}</template>
-            <template #unCheckedChildren>{{ $t('user.inactive') }}</template>
-          </a-switch>
-        </template>
-        <template v-else-if="column.dataIndex === 'gender'">
-          <a-tag :color="genderValueEnum[record.gender]?.color">
-            {{ genderValueEnum[record.gender]?.text || record.gender }}
-          </a-tag>
-        </template>
-      </template>
-    </ProTable>
-
-    <!-- Create/Edit Modal -->
-    <ProFormModal
-      v-model:open="modalVisible"
-      :title="editingId ? $t('exampleTable.editUser') : $t('exampleTable.createUser')"
-      :session-key="formSessionKey"
-      :form-items="formItems"
-      :initial-values="formData"
-      :grid="{ cols: 2, gutter: 16 }"
-      width="600px"
-      @submit="handleSubmit"
-      @cancel="closeFormModal"
-      @closed="finishFormClose"
-    />
+    </SuperTable>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { PageParams } from '@/types/api';
-import type { User } from '@/types/auth';
-import type { ProTableColumn, ProFormItem, ProTableRequestParams } from '@/types/pro';
+import type { User } from '@/api/generated/admin/data-contracts';
+import type { ExtColumnsItem, UniOption } from 'superform-antdv';
 
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@antdv-next/icons';
-import { message } from 'antdv-next';
-import { computed } from 'vue';
+import { ReloadOutlined } from '@antdv-next/icons';
+import { message, Switch } from 'antdv-next';
+import { SuperTable, useTable } from 'superform-antdv';
+import { computed, h, reactive, shallowRef } from 'vue';
 
-import { getUserList, createUser, updateUser, deleteUser } from '@/api/user';
-import ProFormModal from '@/components/Pro/ProFormModal/index.vue';
-import ProTable from '@/components/Pro/ProTable/index.vue';
-import { useCrudFormSession } from '@/composables/useCrudFormSession';
+import { userTableApi } from '@/api/facade/userTable';
+import ValueView from '@/components/Display/ValueView.vue';
+import { useTableParams } from '@/composables/useTableParams';
 import { $t } from '@/locales';
 import { commonRules } from '@/utils/formRules';
-
-type TableFormValues = {
-  username: string;
-  email: string;
-  realName: string;
-  phone: string;
-  gender: 'male' | 'female';
-  status: boolean;
-  bio: string;
-};
-
-const createDefaultFormValues = (): TableFormValues => ({
-  username: '',
-  email: '',
-  realName: '',
-  phone: '',
-  gender: 'male',
-  status: true,
-  bio: '',
-});
-
-const {
-  open: modalVisible,
-  record: editingRecord,
-  initialValues: formData,
-  sessionKey: formSessionKey,
-  openCreate: openCreateForm,
-  openEdit: openEditForm,
-  close: closeFormModal,
-  finishClose: finishFormClose,
-} = useCrudFormSession<User, TableFormValues>(createDefaultFormValues);
-const editingId = computed(() => editingRecord.value?.id ?? null);
 
 const genderOptions = computed(() => [
   { label: $t('user.male'), value: 'male' },
   { label: $t('user.female'), value: 'female' },
 ]);
-
-const genderValueEnum = computed<Record<string, { text: string; color?: string }>>(() => ({
-  male: { text: $t('user.male'), color: 'blue' },
-  female: { text: $t('user.female'), color: 'pink' },
-}));
-
-// Search form items configuration
-const searchFormItems = computed<ProFormItem[]>(() => [
-  { name: 'email', label: $t('user.email'), type: 'input' },
-  { name: 'realName', label: $t('user.realName'), type: 'input' },
-  { name: 'gender', label: $t('user.gender'), type: 'select', options: genderOptions.value },
-  { name: 'createdAt', label: $t('common.createTime'), type: 'dateRange' },
+// Switch 直接绑定业务字符串，回填与提交无需维护第二套布尔状态。
+const statusOptions = computed(() => [
+  { label: $t('user.inactive'), value: 'inactive' },
+  { label: $t('user.active'), value: 'active' },
 ]);
+const pendingStatus = reactive(new Set<string>());
 
-// Table columns configuration
-const columns = computed<ProTableColumn[]>(() => [
+const columns: ExtColumnsItem[] = [
+  { type: 'Hidden', field: 'id' },
   {
-    title: $t('user.username'),
-    dataIndex: 'username',
-    width: 150,
-    fixed: 'left',
-    headerFilter: {
-      type: 'keyword',
-      mode: 'server',
-      icon: 'search',
-      placeholder: `搜索${$t('user.username')}`,
-      matchAllKeywords: true,
-    },
-  },
-  {
-    title: $t('user.email'),
-    dataIndex: 'email',
-    copyable: true,
-  },
-  {
-    title: $t('user.realName'),
-    dataIndex: 'realName',
-  },
-  {
-    title: $t('user.phone'),
-    dataIndex: 'phone',
-  },
-  {
-    title: $t('user.gender'),
-    dataIndex: 'gender',
-    headerFilter: {
-      type: 'select',
-      mode: 'server',
-      icon: 'filter',
-      multiple: true,
-      options: genderOptions.value,
-    },
-    valueType: 'tag',
-    valueEnum: genderValueEnum.value,
-  },
-  {
-    title: $t('common.status'),
-    dataIndex: 'status',
-    width: 150,
-    headerFilter: {
-      type: 'select',
-      mode: 'server',
-      icon: 'filter',
-      multiple: false,
-      options: [
-        { label: $t('user.active'), value: 'active' },
-        { label: $t('user.inactive'), value: 'inactive' },
-      ],
-    },
-  },
-  {
-    title: $t('common.createTime'),
-    dataIndex: 'createdAt',
-    valueType: 'dateTime',
-    sorter: true,
-  },
-  {
-    title: $t('common.actions'),
-    dataIndex: 'action',
-    width: 200,
-    fixed: 'right',
-    actions: [
-      {
-        label: $t('common.edit'),
-        icon: EditOutlined,
-        onClick: (record) => handleEdit(record as unknown as User),
+    type: 'Input',
+    field: 'username',
+    label: () => $t('user.username'),
+    columnProps: {
+      width: 180,
+      fixed: 'left',
+      headerFilter: {
+        type: 'keyword',
+        mode: 'server',
+        get placeholder() {
+          return $t('proForm.enterPlaceholder', { label: $t('user.username') });
+        },
       },
+    },
+  },
+  {
+    type: 'Input',
+    field: 'email',
+    label: () => $t('user.email'),
+    viewRender: ({ text }: { text: unknown }) => h(ValueView, { value: text, copyable: true }),
+    columnProps: { width: 240 },
+  },
+  { field: 'realName', label: () => $t('user.realName'), columnProps: { width: 200 } },
+  { field: 'phone', label: () => $t('user.phone'), columnProps: { width: 150 } },
+  {
+    type: 'Select',
+    field: 'gender',
+    label: () => $t('user.gender'),
+    options: { source: genderOptions },
+    columnProps: { width: 90 },
+  },
+  {
+    field: 'status',
+    label: () => $t('common.status'),
+    // 即时状态操作独立于弹窗编辑，保留业务交互并阻止同一行重复写入。
+    viewRender: ({ record }: { record: User }) =>
+      h(Switch, {
+        checked: record.status === 'active',
+        checkedChildren: $t('user.active'),
+        unCheckedChildren: $t('user.inactive'),
+        loading: pendingStatus.has(record.id),
+        disabled: pendingStatus.has(record.id),
+        onChange: (checked) => changeStatus(record, Boolean(checked)),
+      }),
+    columnProps: {
+      width: 130,
+      headerFilter: {
+        type: 'select',
+        mode: 'server',
+        get options() {
+          return statusOptions.value;
+        },
+      },
+    },
+  },
+  {
+    field: 'createdAt',
+    label: () => $t('common.createTime'),
+    viewRender: ({ text }: { text: unknown }) => h(ValueView, { value: text, type: 'dateTime' }),
+    columnProps: { width: 190 },
+  },
+];
+
+const formItems: UniOption[] = [
+  { type: 'Hidden', field: 'id' },
+  {
+    type: 'Input',
+    field: 'username',
+    label: () => $t('user.username'),
+    required: true,
+    rules: [commonRules.length(3, 20), commonRules.username()],
+  },
+  {
+    type: 'Input',
+    field: 'email',
+    label: () => $t('user.email'),
+    required: true,
+    rules: commonRules.email(),
+  },
+  { type: 'Input', field: 'realName', label: () => $t('user.realName'), required: true },
+  { type: 'Input', field: 'phone', label: () => $t('user.phone'), rules: commonRules.phone() },
+  {
+    type: 'Select',
+    field: 'gender',
+    label: () => $t('user.gender'),
+    required: true,
+    initialValue: 'male',
+    options: { source: genderOptions },
+  },
+  {
+    type: 'Switch',
+    field: 'status',
+    label: () => $t('common.status'),
+    required: true,
+    initialValue: 'active',
+    options: { source: statusOptions },
+  },
+  {
+    type: 'TextArea',
+    field: 'bio',
+    label: () => $t('user.bio'),
+    span: 24,
+    attrs: { rows: 4, maxLength: 200, showCount: true },
+  },
+];
+
+const headerQuery = useTableParams(() => columns);
+const toolbarTarget = shallowRef<HTMLElement | null>(null);
+// 注册一次稳定 Schema，弹窗与行状态变化不再重新初始化查询和分页。
+const [registerTable, table] = useTable({
+  isContainer: true,
+  maxHeight: 'viewport',
+  fixedHeight: true,
+  heightOffset: 20,
+  columns,
+  slots: { title: 'title' },
+  params: headerQuery.params,
+  indexColumn: false,
+  columnProps: { ellipsis: true },
+  attrs: {
+    rowKey: 'id',
+    scroll: { x: 1400 },
+    tableTools: ['density', 'columnSetting'],
+    toolbarTarget,
+    onFilterChange: headerQuery.onFilterChange,
+    onSortChange: headerQuery.onSortChange,
+  },
+  searchForm: {
+    // 查询仅使用实际接口支持的字段；表头筛选负责用户名、状态，避免参数同名覆盖。
+    subSpan: 8,
+    subItems: [
+      'email',
       {
-        label: $t('common.delete'),
-        icon: DeleteOutlined,
-        danger: true,
-        confirm: $t('user.confirmDelete'),
-        onClick: (record) => handleDelete(record as unknown as User),
+        type: 'Select',
+        field: 'gender',
+        label: () => $t('user.gender'),
+        attrs: { mode: 'multiple' },
+        options: { source: genderOptions },
       },
     ],
   },
-]);
-
-// Form items configuration
-const formItems = computed<ProFormItem[]>(() => [
-  {
-    name: 'username',
-    label: $t('user.username'),
-    type: 'input',
-    required: true,
-    rules: [commonRules.required(), commonRules.length(3, 20), commonRules.username()],
+  buttons: {
+    actions: [
+      { name: 'add', label: () => $t('exampleTable.createUser') },
+      {
+        label: () => $t('common.refresh'),
+        icon: () => h(ReloadOutlined),
+        onClick: () => table.reload(),
+      },
+    ],
   },
-  {
-    name: 'email',
-    label: $t('user.email'),
-    type: 'input',
-    required: true,
-    rules: [commonRules.required(), commonRules.email()],
+  rowButtons: {
+    actions: [
+      { name: 'edit', label: () => $t('common.edit') },
+      {
+        name: 'delete',
+        label: () => $t('common.delete'),
+        confirmText: () => $t('user.confirmDelete'),
+        attrs: { danger: true },
+      },
+    ],
+    columnProps: { title: () => $t('common.actions'), width: 190, fixed: 'right' },
   },
-  {
-    name: 'realName',
-    label: $t('user.realName'),
-    type: 'input',
-    required: true,
-  },
-  {
-    name: 'phone',
-    label: $t('user.phone'),
-    type: 'input',
-    rules: [commonRules.phone()],
-  },
-  {
-    name: 'gender',
-    label: $t('user.gender'),
-    type: 'select',
-    required: true,
-    options: genderOptions.value,
-  },
-  {
-    name: 'status',
-    label: $t('common.status'),
-    type: 'switch',
-    valuePropName: 'checked',
-    required: true,
-    initialValue: true,
-    props: {
-      checkedChildren: $t('user.active'),
-      unCheckedChildren: $t('user.inactive'),
+  rowEditor: {
+    addMode: 'modal',
+    editMode: 'modal',
+    form: { subSpan: 12, attrs: { layout: 'vertical' }, subItems: formItems },
+    modalProps: {
+      width: 600,
+      title: ({ meta }: { meta: { isNew: boolean } }) =>
+        $t(meta.isNew ? 'exampleTable.createUser' : 'exampleTable.editUser'),
     },
   },
-  {
-    name: 'bio',
-    label: $t('user.bio'),
-    type: 'textarea',
-    colSpan: 2,
-    props: {
-      rows: 4,
-      maxLength: 200,
-      showCount: true,
-    },
-  },
-]);
-
-// Methods
-const fetchData = async (params: ProTableRequestParams) => {
-  const res = await getUserList({
-    ...params,
-    current: Number(params.current || 1),
-    pageSize: Number(params.pageSize || 10),
-  } as PageParams);
-  return {
-    data: res.data.list,
-    total: res.data.total,
-    success: true,
-  };
-};
-
-const handleCreate = () => {
-  openCreateForm();
-};
-
-const handleEdit = (record: User) => {
-  openEditForm(record, {
-    username: record.username,
-    email: record.email,
-    realName: record.realName,
-    phone: record.phone,
-    gender: record.gender || 'male',
-    status: record.status === 'active',
-    bio: record.bio || '',
-  });
-};
-
-const handleDelete = async (record: User) => {
-  await deleteUser(record.id);
-  message.success($t('exampleTable.deleteSuccess'));
-};
-
-const handleSubmit = async (rawValues: Record<string, unknown>) => {
-  const values = rawValues as TableFormValues;
-  const payload: Partial<User> = {
-    ...values,
-    status: values.status ? 'active' : 'inactive',
-  };
-
-  try {
-    if (editingId.value) {
-      await updateUser(editingId.value, payload);
-      message.success($t('exampleTable.updateSuccess'));
-    } else {
-      await createUser(payload);
+  apis: {
+    query: userTableApi.query,
+    info: userTableApi.info,
+    async save(data) {
+      await userTableApi.save(data);
       message.success($t('exampleTable.createSuccess'));
-    }
-    closeFormModal();
-  } catch (error: unknown) {
-    message.error((error as Error).message || $t('exampleTable.createSuccess'));
-  }
-};
+    },
+    async update(data) {
+      await userTableApi.update(data);
+      message.success($t('exampleTable.updateSuccess'));
+    },
+    async delete(keys) {
+      await userTableApi.delete(keys);
+      message.success($t('exampleTable.deleteSuccess'));
+    },
+  },
+});
 
-const handleStatusChange = async (record: User, checked: boolean) => {
+async function changeStatus(record: User, checked: boolean) {
+  if (pendingStatus.has(record.id)) return;
+  pendingStatus.add(record.id);
   try {
-    const newStatus = checked ? 'active' : 'inactive';
-    await updateUser(record.id, { ...record, status: newStatus });
-    record.status = newStatus;
+    await userTableApi.update({ ...record, status: checked ? 'active' : 'inactive' });
     message.success($t('exampleTable.updateSuccess'));
-  } catch (error: unknown) {
-    message.error((error as Error).message || $t('common.error'));
+    await table.reload();
+  } catch {
+    // 接口失败由服务层反馈，不改变当前行，也不重复提示。
+  } finally {
+    pendingStatus.delete(record.id);
   }
-};
+}
 </script>
+
+<style scoped>
+:deep(.sup-title) {
+  flex: 1 1 auto !important;
+  min-width: 0;
+}
+:deep(.sup-title-buttons) {
+  flex: 0 0 auto !important;
+}
+:deep(.table-heading) {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.table-toolbar-target {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+:deep(.table-heading small) {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: normal;
+}
+</style>

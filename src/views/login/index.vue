@@ -75,58 +75,25 @@
           <h2 id="login-form-title">{{ $t('login.formTitle') }}</h2>
           <p class="form-sub">{{ $t('login.formSubtitle') }}</p>
 
-          <a-form
-            :model="formState"
-            :rules="rules"
-            layout="vertical"
-            class="login-form"
-            @finish="handleSubmit"
-          >
-            <a-form-item :label="$t('login.username')" name="username">
-              <a-input
-                v-model:value="formState.username"
-                size="large"
-                autocomplete="username"
-                :placeholder="$t('login.usernamePlaceholder')"
-              >
-                <template #prefix>
-                  <UserOutlined />
-                </template>
-              </a-input>
-            </a-form-item>
-
-            <a-form-item :label="$t('login.password')" name="password">
-              <a-input-password
-                v-model:value="formState.password"
-                size="large"
-                autocomplete="current-password"
-                :placeholder="$t('login.passwordPlaceholder')"
-              >
-                <template #prefix>
-                  <LockOutlined />
-                </template>
-              </a-input-password>
-            </a-form-item>
-
-            <a-form-item>
-              <SliderCaptcha
+          <SuperForm @register="registerLoginForm" class="login-form">
+            <template #captcha
+              ><SliderCaptcha
                 ref="captchaRef"
                 :text="$t('login.slideToVerify')"
                 :success-text="$t('login.verifySuccess')"
                 :height="40"
                 @success="onCaptchaSuccess"
                 @fail="onCaptchaFail"
-              />
-            </a-form-item>
-
-            <div class="login-options">
-              <a-checkbox v-model:checked="formState.remember">
-                {{ $t('login.remember') }}
-              </a-checkbox>
-            </div>
-
-            <a-form-item>
-              <a-button
+            /></template>
+            <template #loginOptions>
+              <div class="login-options">
+                <a-checkbox v-model:checked="formState.remember">
+                  {{ $t('login.remember') }}
+                </a-checkbox>
+              </div></template
+            >
+            <template #loginActions
+              ><a-button
                 type="primary"
                 html-type="submit"
                 size="large"
@@ -138,9 +105,9 @@
               </a-button>
               <p class="submit-hint">
                 {{ captchaVerified ? $t('login.submitReadyHint') : $t('login.submitLockedHint') }}
-              </p>
-            </a-form-item>
-          </a-form>
+              </p></template
+            >
+          </SuperForm>
 
           <div class="login-demo">
             <div class="demo-title">
@@ -179,7 +146,8 @@
 <script setup lang="ts">
 import { CheckCircleOutlined, LockOutlined, UserOutlined } from '@antdv-next/icons';
 import { message } from 'antdv-next';
-import { reactive, ref } from 'vue';
+import { SuperForm, useForm } from 'superform-antdv';
+import { reactive, ref, h } from 'vue';
 import { useRouter } from 'vue-router';
 
 import logoImg from '@/assets/images/logo.png';
@@ -222,6 +190,40 @@ const rules = {
   password: [{ required: true, message: $t('login.passwordRequired') }],
 };
 
+const [registerLoginForm, loginForm] = useForm({
+  dataSource: formState,
+  subSpan: 24,
+  dynamicAttrs: () => ({ layout: 'vertical', rules, onFinish: handleSubmit }),
+  subItems: [
+    {
+      type: 'Input',
+      field: 'username',
+      label: () => $t('login.username'),
+      dynamicAttrs: () => ({
+        size: 'large',
+        autocomplete: 'username',
+        placeholder: $t('login.usernamePlaceholder'),
+      }),
+      slots: { prefix: () => h(UserOutlined) },
+    },
+    {
+      type: 'InputPassword',
+      field: 'password',
+      label: () => $t('login.password'),
+      dynamicAttrs: () => ({
+        size: 'large',
+        autocomplete: 'current-password',
+        placeholder: $t('login.passwordPlaceholder'),
+      }),
+      slots: { prefix: () => h(LockOutlined) },
+    },
+    { type: 'InfoSlot', render: 'captcha' },
+    { type: 'InfoSlot', render: 'loginOptions', block: true },
+    { type: 'InfoSlot', render: 'loginActions' },
+    { type: 'Hidden', field: 'remember' },
+  ],
+});
+
 const currentYear = new Date().getFullYear();
 const buildLabel = `${currentYear}.${String(new Date().getMonth() + 1).padStart(2, '0')}`;
 
@@ -238,23 +240,23 @@ const selectDemoAccount = (username: string) => {
   formState.password = '123456';
 };
 
-const handleSubmit = async () => {
+async function handleSubmit() {
+  if (loading.value || !captchaVerified.value) return;
   loading.value = true;
   try {
+    const values = await loginForm.submit();
     clearSessionState(router);
-    await authStore.login(formState.username, formState.password);
+    await authStore.login(String(values.username), String(values.password));
     message.success($t('login.loginSuccess'));
     router.push('/');
-  } catch (error: unknown) {
-    message.error(
-      (error instanceof Error ? error.message : String(error)) || $t('login.loginFailed'),
-    );
+  } catch {
+    // 字段校验由表单反馈，接口失败由服务层反馈，避免重复提示。
     captchaVerified.value = false;
     captchaRef.value?.reset();
   } finally {
     loading.value = false;
   }
-};
+}
 </script>
 
 <style scoped lang="scss">

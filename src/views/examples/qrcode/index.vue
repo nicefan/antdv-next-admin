@@ -7,14 +7,7 @@
       <a-tabs v-model:activeKey="activeTab">
         <a-tab-pane key="basic" :tab="$t('exampleQRCode.basicTab')">
           <div class="qrcode-section">
-            <a-form layout="vertical" :style="{ maxWidth: '400px' }">
-              <a-form-item :label="$t('exampleQRCode.content')">
-                <a-input v-model:value="basicContent" />
-              </a-form-item>
-              <a-form-item :label="$t('exampleQRCode.size')">
-                <a-input-number v-model:value="basicSize" :min="100" :max="400" :step="20" />
-              </a-form-item>
-            </a-form>
+            <SuperForm @register="registerBasicForm" style="max-width: 400px; width: 100%" />
             <div class="qrcode-preview">
               <a-qrcode :value="basicContent" :size="basicSize" />
             </div>
@@ -23,22 +16,10 @@
 
         <a-tab-pane key="style" :tab="$t('exampleQRCode.styleTab')">
           <div class="qrcode-section">
-            <a-form layout="vertical" :style="{ maxWidth: '400px' }">
-              <a-form-item :label="$t('exampleQRCode.bgColor')">
-                <input type="color" v-model="styleBgColor" />
-              </a-form-item>
-              <a-form-item :label="$t('exampleQRCode.fgColor')">
-                <input type="color" v-model="styleFgColor" />
-              </a-form-item>
-              <a-form-item :label="$t('exampleQRCode.errorLevel')">
-                <a-select v-model:value="styleErrorLevel" style="width: 150px">
-                  <a-select-option value="L">L (7%)</a-select-option>
-                  <a-select-option value="M">M (15%)</a-select-option>
-                  <a-select-option value="Q">Q (25%)</a-select-option>
-                  <a-select-option value="H">H (30%)</a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-form>
+            <SuperForm @register="registerStyleForm" style="max-width: 400px; width: 100%">
+              <template #backgroundColor><input type="color" v-model="styleBgColor" /></template>
+              <template #foregroundColor><input type="color" v-model="styleFgColor" /></template>
+            </SuperForm>
             <div class="qrcode-preview">
               <a-qrcode
                 value="https://www.antdv-next.com"
@@ -89,14 +70,7 @@
 
         <a-tab-pane key="download" :tab="$t('exampleQRCode.downloadTab')">
           <div class="qrcode-section">
-            <a-form layout="vertical" :style="{ maxWidth: '400px' }">
-              <a-form-item :label="$t('exampleQRCode.downloadContent')">
-                <a-input v-model:value="downloadContent" />
-              </a-form-item>
-              <a-form-item :label="$t('exampleQRCode.fileName')">
-                <a-input v-model:value="downloadFileName" />
-              </a-form-item>
-            </a-form>
+            <SuperForm @register="registerDownloadForm" style="max-width: 400px; width: 100%" />
             <div class="qrcode-preview">
               <a-qrcode ref="downloadQRRef" :value="downloadContent" :size="200" />
               <a-button type="primary" style="margin-top: 16px" @click="handleDownload">
@@ -111,38 +85,92 @@
 </template>
 
 <script setup lang="ts">
-import { DownloadOutlined } from '@antdv-next/icons'
-import type { QRCodeProps } from 'antdv-next'
-import { message } from 'antdv-next'
-import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
+import type { QRCodeProps } from 'antdv-next';
 
-const { t } = useI18n()
+import { DownloadOutlined } from '@antdv-next/icons';
+import { message } from 'antdv-next';
+import { SuperForm, useForm } from 'superform-antdv';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
-const activeTab = ref('basic')
-const basicContent = ref('https://www.antdv-next.com')
-const basicSize = ref(200)
+const { t } = useI18n();
 
-const styleBgColor = ref('#ffffff')
-const styleFgColor = ref('#000000')
-const styleErrorLevel = ref<QRCodeProps['errorLevel']>('M')
+const activeTab = ref('basic');
+const basicContent = ref('https://www.antdv-next.com');
+const basicSize = ref(200);
 
-const downloadContent = ref('https://www.antdv-next.com')
-const downloadFileName = ref('antdv-next-qrcode')
+const styleBgColor = ref('#ffffff');
+const styleFgColor = ref('#000000');
+const styleErrorLevel = ref<QRCodeProps['errorLevel']>('M');
 
-const downloadQRRef = ref()
+const downloadContent = ref('https://www.antdv-next.com');
+const downloadFileName = ref('antdv-next-qrcode');
+
+const downloadQRRef = ref();
 
 const handleDownload = () => {
-  const canvas = downloadQRRef.value?.$el?.querySelector('canvas')
+  const canvas = downloadQRRef.value?.$el?.querySelector('canvas');
   if (canvas) {
-    const url = canvas.toDataURL('image/png')
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${downloadFileName.value}.png`
-    link.click()
-    message.success(t('exampleQRCode.downloadSuccess'))
+    const url = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${downloadFileName.value}.png`;
+    link.click();
+    message.success(t('exampleQRCode.downloadSuccess'));
   }
-}
+};
+const [registerBasicForm] = useForm({
+  subSpan: 24,
+  attrs: { layout: 'vertical' },
+  subItems: [
+    { type: 'Input', label: () => t('exampleQRCode.content'), value: basicContent },
+    {
+      type: 'InputNumber',
+      label: () => t('exampleQRCode.size'),
+      value: basicSize,
+      attrs: { min: 100, max: 400, step: 20 },
+    },
+  ],
+});
+const [registerStyleForm] = useForm({
+  subSpan: 24,
+  attrs: { layout: 'vertical' },
+  subItems: [
+    {
+      type: 'InputSlot',
+      label: () => t('exampleQRCode.bgColor'),
+      value: styleBgColor,
+      render: 'backgroundColor',
+    },
+    {
+      type: 'InputSlot',
+      label: () => t('exampleQRCode.fgColor'),
+      value: styleFgColor,
+      render: 'foregroundColor',
+    },
+    {
+      type: 'Select',
+      label: () => t('exampleQRCode.errorLevel'),
+      value: styleErrorLevel,
+      options: {
+        source: [
+          { label: 'L (7%)', value: 'L' },
+          { label: 'M (15%)', value: 'M' },
+          { label: 'Q (25%)', value: 'Q' },
+          { label: 'H (30%)', value: 'H' },
+        ],
+      },
+    },
+  ],
+});
+const [registerDownloadForm] = useForm({
+  subSpan: 24,
+  attrs: { layout: 'vertical' },
+  subItems: [
+    { type: 'Input', label: () => t('exampleQRCode.downloadContent'), value: downloadContent },
+    { type: 'Input', label: () => t('exampleQRCode.fileName'), value: downloadFileName },
+  ],
+});
 </script>
 
 <style scoped lang="scss">

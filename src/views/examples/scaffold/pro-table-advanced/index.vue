@@ -6,28 +6,34 @@
           {{ $t('examples.scaffold.proTableAdvanced.searchColumnsPerRow') }}
         </span>
         <a-segmented v-model:value="searchColumnsPerRow" :options="[2, 3, 4, 5]" />
-        <code>search.columnsPerRow = {{ searchColumnsPerRow }}</code>
+        <code>searchForm.subSpan = {{ 24 / searchColumnsPerRow }}</code>
       </a-space>
       <span class="search-layout-demo-hint">
         {{ $t('examples.scaffold.proTableAdvanced.searchColumnsPerRowHint') }}
       </span>
     </div>
 
-    <ProTable
-      :columns="columns"
-      :request="requestTableData"
-      :toolbar="toolbarConfig"
-      :search="{
-        formItems: searchFormItems,
-        labelWidth: 80,
-        defaultCollapsed: true,
-        collapsedRows: 1,
-        columnsPerRow: searchColumnsPerRow,
+    <SuperTable
+      ref="nativeTableRef1"
+      :schema="{
+        slots: { extra: 'extra', bodyCell: 'bodyCell' },
+        columns: columns,
+        apis: { query: requestTableData },
+        params: nativeQuery1.params,
+        searchForm: { subItems: searchFormItems, subSpan: 24 / searchColumnsPerRow, limit: 2 },
+        pagination: {},
+        indexColumn: false,
+        title: toolbarConfig.title,
+        attrs: {
+          onChange: nativeQuery1.onChange,
+          tableTools: 'actions' in toolbarConfig ? toolbarConfig.actions : undefined,
+          onReload: () => nativeTableRef1?.reload(),
+          rowSelection: rowSelection,
+          rowKey: 'id',
+        },
       }"
-      :row-selection="rowSelection"
-      row-key="id"
     >
-      <template #toolbar-actions>
+      <template #extra>
         <a-space wrap>
           <a-tag color="processing">{{
             $t('examples.scaffold.proTableAdvanced.selectedCount', {
@@ -63,9 +69,9 @@
           />
         </template>
       </template>
-    </ProTable>
+    </SuperTable>
 
-    <ProFormModal
+    <NativeModal
       v-model:open="modalVisible"
       :title="
         editingId
@@ -73,28 +79,33 @@
           : $t('examples.scaffold.proTableAdvanced.createUser')
       "
       :confirm-loading="submitting"
-      :session-key="formSessionKey"
-      :form-items="formItems"
-      :initial-values="formData"
-      :grid="{ cols: 2, gutter: 16 }"
-      :layout="{ layout: 'vertical' }"
       width="640px"
-      @submit="handleSubmit"
       @cancel="handleCancel"
-      @closed="finishFormClose"
-    />
+      @ok="submitEditForm1"
+      :after-close="finishFormClose"
+    >
+      <SuperForm
+        ref="editFormRef1"
+        :key="formSessionKey"
+        :schema="{
+          dataSource: formData,
+          subSpan: 12,
+          attrs: { layout: 'vertical' },
+          subItems: formItems,
+        }"
+      />
+    </NativeModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { ProFormItem, ProTableColumn } from '@/types/pro';
+import type { UniOption, ExtColumnsItem } from 'superform-antdv';
 
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@antdv-next/icons';
 import { message, Modal } from 'antdv-next';
-import { computed, ref } from 'vue';
+import { SuperTable, SuperForm, SuperButtons } from 'superform-antdv';
+import { computed, ref, h, watch } from 'vue';
 
-import ProFormModal from '@/components/Pro/ProFormModal/index.vue';
-import ProTable from '@/components/Pro/ProTable/index.vue';
 import { useCrudFormSession } from '@/composables/useCrudFormSession';
 import { $t } from '@/locales';
 
@@ -165,60 +176,72 @@ const toolbarConfig = computed(() => ({
   >,
 }));
 
-const searchFormItems = computed<ProFormItem[]>(() => [
-  { name: 'username', label: $t('examples.scaffold.proTableAdvanced.username'), type: 'input' },
-  { name: 'realName', label: $t('examples.scaffold.proTableAdvanced.realName'), type: 'input' },
-  { name: 'email', label: $t('examples.scaffold.proTableAdvanced.email'), type: 'input' },
+const searchFormItems = computed<UniOption[]>(() => [
   {
-    name: 'gender',
-    label: $t('examples.scaffold.proTableAdvanced.gender'),
-    type: 'select',
-    options: [
-      { label: $t('user.male'), value: 'male' },
-      { label: $t('user.female'), value: 'female' },
-    ],
+    type: 'Input',
+    field: 'username',
+    label: () => $t('examples.scaffold.proTableAdvanced.username'),
   },
   {
-    name: 'status',
-    label: $t('examples.scaffold.proTableAdvanced.status'),
-    type: 'select',
-    options: [
-      {
-        label: $t('examples.scaffold.proTableAdvanced.statusActive'),
-        value: 'active',
-      },
-      {
-        label: $t('examples.scaffold.proTableAdvanced.statusInactive'),
-        value: 'inactive',
-      },
-    ],
+    type: 'Input',
+    field: 'realName',
+    label: () => $t('examples.scaffold.proTableAdvanced.realName'),
+  },
+  { type: 'Input', field: 'email', label: () => $t('examples.scaffold.proTableAdvanced.email') },
+  {
+    type: 'Select',
+    field: 'gender',
+    label: () => $t('examples.scaffold.proTableAdvanced.gender'),
+    options: {
+      source: () => [
+        { label: $t('user.male'), value: 'male' },
+        { label: $t('user.female'), value: 'female' },
+      ],
+    },
+  },
+  {
+    type: 'Select',
+    field: 'status',
+    label: () => $t('examples.scaffold.proTableAdvanced.status'),
+    options: {
+      source: () => [
+        {
+          label: $t('examples.scaffold.proTableAdvanced.statusActive'),
+          value: 'active',
+        },
+        {
+          label: $t('examples.scaffold.proTableAdvanced.statusInactive'),
+          value: 'inactive',
+        },
+      ],
+    },
   },
 ]);
 
-const formItems = computed<ProFormItem[]>(() => [
+const formItems = computed<UniOption[]>(() => [
   {
-    name: 'username',
-    label: $t('examples.scaffold.proTableAdvanced.username'),
-    type: 'input',
+    type: 'Input',
+    field: 'username',
+    label: () => $t('examples.scaffold.proTableAdvanced.username'),
     required: true,
-    props: {
-      disabled: Boolean(editingId.value),
-    },
     rules: [
       { required: true, message: $t('examples.scaffold.proTableAdvanced.usernameRequired') },
       { min: 3, max: 20, message: $t('user.usernameLength') },
     ],
+    dynamicAttrs: () => ({
+      disabled: Boolean(editingId.value),
+    }),
   },
   {
-    name: 'realName',
-    label: $t('examples.scaffold.proTableAdvanced.realName'),
-    type: 'input',
+    type: 'Input',
+    field: 'realName',
+    label: () => $t('examples.scaffold.proTableAdvanced.realName'),
     required: true,
   },
   {
-    name: 'email',
-    label: $t('examples.scaffold.proTableAdvanced.email'),
-    type: 'input',
+    type: 'Input',
+    field: 'email',
+    label: () => $t('examples.scaffold.proTableAdvanced.email'),
     required: true,
     rules: [
       { required: true, message: $t('examples.scaffold.proTableAdvanced.emailRequired') },
@@ -226,87 +249,98 @@ const formItems = computed<ProFormItem[]>(() => [
     ],
   },
   {
-    name: 'gender',
-    label: $t('examples.scaffold.proTableAdvanced.gender'),
-    type: 'select',
-    options: [
-      { label: $t('user.male'), value: 'male' },
-      { label: $t('user.female'), value: 'female' },
-    ],
+    type: 'Select',
+    field: 'gender',
+    label: () => $t('examples.scaffold.proTableAdvanced.gender'),
+    options: {
+      source: () => [
+        { label: $t('user.male'), value: 'male' },
+        { label: $t('user.female'), value: 'female' },
+      ],
+    },
   },
   {
-    name: 'status',
-    label: $t('examples.scaffold.proTableAdvanced.status'),
-    type: 'switch',
-    valuePropName: 'checked',
+    type: 'Switch',
+    field: 'status',
+    label: () => $t('examples.scaffold.proTableAdvanced.status'),
     required: true,
-    props: {
+    dynamicAttrs: () => ({
       checkedChildren: $t('examples.scaffold.proTableAdvanced.statusActive'),
       unCheckedChildren: $t('examples.scaffold.proTableAdvanced.statusInactive'),
-    },
+    }),
   },
 ]);
 
-const columns = computed<ProTableColumn[]>(() => [
+const columns = computed<ExtColumnsItem[]>(() => [
   {
-    title: $t('examples.scaffold.proTableAdvanced.username'),
-    dataIndex: 'username',
-    width: 150,
+    field: 'username',
+    label: () => $t('examples.scaffold.proTableAdvanced.username'),
+    columnProps: { width: 150 },
   },
   {
-    title: $t('examples.scaffold.proTableAdvanced.realName'),
-    dataIndex: 'realName',
-    width: 140,
+    field: 'realName',
+    label: () => $t('examples.scaffold.proTableAdvanced.realName'),
+    columnProps: { width: 140 },
   },
   {
-    title: $t('examples.scaffold.proTableAdvanced.email'),
-    dataIndex: 'email',
-    width: 220,
+    field: 'email',
+    label: () => $t('examples.scaffold.proTableAdvanced.email'),
+    columnProps: { width: 220 },
   },
   {
-    title: $t('examples.scaffold.proTableAdvanced.gender'),
-    dataIndex: 'gender',
-    valueType: 'tag',
-    valueEnum: {
-      male: { text: $t('user.male'), color: 'blue' },
-      female: { text: $t('user.female'), color: 'pink' },
-    },
-    width: 120,
-  },
-  {
-    title: $t('examples.scaffold.proTableAdvanced.status'),
-    dataIndex: 'status',
-    width: 140,
-  },
-  {
-    title: $t('examples.scaffold.proTableAdvanced.createdAt'),
-    dataIndex: 'createdAt',
-    valueType: 'dateTime',
-    width: 190,
-  },
-  {
-    title: $t('common.actions'),
-    dataIndex: 'action',
-    width: 180,
-    fixed: 'right',
-    actions: [
-      {
-        label: $t('common.edit'),
-        icon: EditOutlined,
-        onClick: (record) => handleEdit(record as unknown as DemoRow),
-      },
-      {
-        label: $t('common.delete'),
-        icon: DeleteOutlined,
-        danger: true,
-        confirm: $t('examples.scaffold.proTableAdvanced.deleteConfirm'),
-        onClick: (record) => {
-          tableRows.value = tableRows.value.filter((item) => item.id !== record.id);
-          selectedRowKeys.value = selectedRowKeys.value.filter((id) => id !== record.id);
-          message.success($t('examples.scaffold.proTableAdvanced.deleteSuccess'));
+    field: 'gender',
+    label: () => $t('examples.scaffold.proTableAdvanced.gender'),
+    viewRender: ({ text }: { text: unknown }) =>
+      h(ValueView, {
+        value: text,
+        type: 'tag',
+        enum: {
+          male: { text: $t('user.male'), color: 'blue' },
+          female: { text: $t('user.female'), color: 'pink' },
         },
-      },
-    ],
+      }),
+    columnProps: { width: 120 },
+  },
+  {
+    field: 'status',
+    label: () => $t('examples.scaffold.proTableAdvanced.status'),
+    columnProps: { width: 140 },
+  },
+  {
+    field: 'createdAt',
+    label: () => $t('examples.scaffold.proTableAdvanced.createdAt'),
+    viewRender: ({ text }: { text: unknown }) =>
+      h(ValueView, { value: text, type: 'dateTime', enum: undefined, valueTypeProps: undefined }),
+    columnProps: { width: 190 },
+  },
+  {
+    field: 'action',
+    label: () => $t('common.actions'),
+    viewRender: ({ record: row }: { record: Record<string, unknown> }) =>
+      h(SuperButtons, {
+        buttonProps: { type: 'link', size: 'small' },
+        effectData: { record: row },
+        actions: [
+          {
+            label: $t('common.edit'),
+            icon: () => h(EditOutlined),
+            onClick: ({ record }: { record: Record<string, unknown> }) =>
+              handleEdit(record as unknown as DemoRow),
+          },
+          {
+            label: $t('common.delete'),
+            icon: () => h(DeleteOutlined),
+            confirmText: $t('examples.scaffold.proTableAdvanced.deleteConfirm'),
+            onClick: ({ record }: { record: Record<string, unknown> }) => {
+              tableRows.value = tableRows.value.filter((item) => item.id !== record.id);
+              selectedRowKeys.value = selectedRowKeys.value.filter((id) => id !== record.id);
+              message.success($t('examples.scaffold.proTableAdvanced.deleteSuccess'));
+            },
+            attrs: { danger: true },
+          },
+        ],
+      }),
+    columnProps: { width: 180, fixed: 'right' },
   },
 ]);
 
@@ -350,9 +384,10 @@ const requestTableData = async (params: Record<string, unknown>) => {
   const list = filtered.slice(start, start + pageSize);
 
   return {
-    success: true,
-    data: list,
+    records: list,
     total: filtered.length,
+    current: Number(params.current ?? 1),
+    size: Number(params.pageSize ?? 10),
   };
 };
 
@@ -501,12 +536,34 @@ const exportCsv = () => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `pro-table-advanced-${Date.now()}.csv`;
+  link.download = `super-table-advanced-${Date.now()}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 
   message.success($t('examples.scaffold.proTableAdvanced.exportSuccess'));
 };
+
+const nativeTableRef1 = ref<{ reload: () => Promise<unknown> }>();
+const nativeQuery1 = useTableParams(() => columns.value);
+const editFormRef1 = ref<{ submit: () => Promise<Record<string, unknown>> }>();
+async function submitEditForm1(): Promise<void> {
+  if (!editFormRef1.value) return;
+  const values = await editFormRef1.value.submit();
+  await handleSubmit(values);
+}
+
+import ValueView from '@/components/Display/ValueView.vue';
+import NativeModal from '@/components/Native/Modal/index.vue';
+import { useTableParams } from '@/composables/useTableParams';
+
+// 本地数据示例的写操作也触发 SuperTable 查询，不直接覆盖表格内部结果。
+watch(
+  tableRows,
+  () => {
+    void nativeTableRef1.value?.reload();
+  },
+  { deep: true },
+);
 </script>
 
 <style scoped>

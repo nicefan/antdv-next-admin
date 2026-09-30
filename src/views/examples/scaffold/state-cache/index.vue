@@ -10,31 +10,15 @@
     <div class="card mb-lg">
       <div class="section-title">{{ $t('examples.scaffold.stateCache.piniaSection') }}</div>
 
-      <div class="form-grid">
-        <div>
-          <label>{{ $t('examples.scaffold.stateCache.keywordLabel') }}</label>
-          <a-input
-            v-model:value="cacheStore.keyword"
-            :placeholder="$t('examples.scaffold.stateCache.keywordPlaceholder')"
-          />
-        </div>
-        <div>
-          <label>{{ $t('examples.scaffold.stateCache.counterLabel') }}</label>
+      <SuperForm @register="registerCacheForm">
+        <template #counter>
           <div class="counter-row">
             <a-button size="small" @click="cacheStore.counter--">-1</a-button>
             <a-input-number v-model:value="cacheStore.counter" :min="-9999" :max="9999" />
             <a-button size="small" @click="cacheStore.counter++">+1</a-button>
-          </div>
-        </div>
-        <div class="full-row">
-          <label>{{ $t('examples.scaffold.stateCache.notesLabel') }}</label>
-          <a-textarea
-            v-model:value="cacheStore.notes"
-            :rows="3"
-            :placeholder="$t('examples.scaffold.stateCache.notesPlaceholder')"
-          />
-        </div>
-      </div>
+          </div></template
+        >
+      </SuperForm>
 
       <a-space class="mt-md">
         <a-button @click="cacheStore.reset">{{
@@ -70,6 +54,7 @@
 
 <script setup lang="ts">
 import { message } from 'antdv-next';
+import { SuperForm, useForm } from 'superform-antdv';
 import { computed, defineComponent, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
@@ -80,6 +65,39 @@ import { useTabsStore } from '@/stores/tabs';
 const cacheStore = useDemoStateCacheStore();
 const tabsStore = useTabsStore();
 const route = useRoute();
+
+// 直接使用 Store 的字段，维持持久化与重置行为。
+const [registerCacheForm] = useForm({
+  dataSource: cacheStore,
+  subSpan: 12,
+  attrs: { layout: 'vertical' },
+  subItems: [
+    {
+      type: 'Input',
+      field: 'keyword',
+      label: () => $t('examples.scaffold.stateCache.keywordLabel'),
+      dynamicAttrs: () => ({ placeholder: $t('examples.scaffold.stateCache.keywordPlaceholder') }),
+      colProps: { xs: 24, md: 12 },
+    },
+    {
+      type: 'InputSlot',
+      field: 'counter',
+      label: () => $t('examples.scaffold.stateCache.counterLabel'),
+      render: 'counter',
+      colProps: { xs: 24, md: 12 },
+    },
+    {
+      type: 'TextArea',
+      field: 'notes',
+      span: 24,
+      label: () => $t('examples.scaffold.stateCache.notesLabel'),
+      dynamicAttrs: () => ({
+        rows: 3,
+        placeholder: $t('examples.scaffold.stateCache.notesPlaceholder'),
+      }),
+    },
+  ],
+});
 
 const activePanel = ref<'panelA' | 'panelB'>('panelA');
 

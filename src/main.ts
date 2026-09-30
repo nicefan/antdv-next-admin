@@ -1,13 +1,14 @@
 import { createPinia } from 'pinia';
 import { createApp } from 'vue';
 
+import { service } from './api/service/transport';
 import App from './App.vue';
 import { registerDefaultComponentProps } from './components/Global/defaultComponentProps';
 import { setupDirectives } from './directives';
 import i18n from './locales';
 import router from './router';
+import { setupSuperForm } from './setupSuperForm';
 import { useMenuPreferencesStore } from './stores/menuPreferences';
-import { service } from './utils/request';
 // Import global styles
 // Tailwind CSS with @layer configuration (must come after reset.css)
 import 'antdv-next/dist/reset.css';
@@ -44,6 +45,7 @@ async function bootstrap() {
 
   // Register plugins
   app.use(pinia);
+  setupSuperForm();
   // Capture and migrate legacy tab favorites before router guards can rewrite tab state.
   useMenuPreferencesStore(pinia);
   app.use(router);

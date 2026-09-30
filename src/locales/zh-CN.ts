@@ -124,7 +124,7 @@ export default {
     colorPicker: '颜色选择器',
     requestAuth: '请求鉴权闭环',
     rbacFlow: 'RBAC 全链路',
-    proTableAdvanced: 'ProTable 高阶',
+    proTableAdvanced: 'SuperTable 高阶',
     complexForm: '复杂表单',
     uploadSystem: '上传体系',
     importExport: '导入导出闭环',
@@ -284,7 +284,7 @@ export default {
     modulePermissionMeta: '角色与用户',
     moduleMenuMeta: '权限代码',
     moduleSystemMeta: '配置与日志',
-    previewSubtitle: 'ProTable + ProForm',
+    previewSubtitle: 'SuperTable + SuperForm',
     previewAddMenu: '新增菜单',
     previewCreateUser: '新增用户',
     permissionCode: '权限代码',
@@ -512,7 +512,7 @@ export default {
 
   exampleTable: {
     userList: '用户列表',
-    subTitle: 'ProTable 示例',
+    subTitle: 'SuperTable 示例',
     createUser: '新建用户',
     editUser: '编辑用户',
     deleteSuccess: '删除成功',
@@ -609,7 +609,7 @@ export default {
   },
 
   exampleForm: {
-    description: 'ProForm 高级表单示例 - 展示各种表单控件',
+    description: 'SuperForm 高级表单示例 - 展示各种表单控件',
     age: '年龄',
     ageRange: '年龄必须在1-150之间',
     interests: '兴趣爱好',
@@ -832,7 +832,7 @@ export default {
   },
 
   exampleModal: {
-    title: 'ProModal 示例',
+    title: 'NativeModal 示例',
     description: '基于 antdv-next Modal 的增强封装，支持拖拽、全屏、边缘缩放与边界约束。',
     openDefault: '打开默认弹窗',
     openWide: '打开宽版弹窗',
@@ -844,7 +844,7 @@ export default {
     mask: '遮罩',
     maskClosable: '点击遮罩关闭',
     keyboard: 'ESC 关闭',
-    modalTitle: '可拖拽 / 可缩放 ProModal',
+    modalTitle: '可拖拽 / 可缩放 NativeModal',
     hint: '右上角提供全屏与关闭按钮；可直接拖动标题栏移动弹窗；拖拽四边或四角调整大小。',
     contentTitle: '功能演示内容',
     contentDescription: '为便于观察滚动与边界行为，以下内容刻意增加了较长列表。',
@@ -914,7 +914,7 @@ export default {
     feature5Desc: '内置中英文切换，轻松扩展更多语言包',
     feature6: '亮色 / 暗色主题切换',
     feature6Desc: '6 种主题色预设，支持跟随系统自动切换',
-    feature7: 'ProTable / ProForm 高阶组件',
+    feature7: 'SuperTable / SuperForm 高阶组件',
     feature7Desc: '配置驱动的表格与表单，覆盖常见业务场景',
     feature8: 'Mock 数据开发模式',
     feature8Desc: '内置完整 Mock 体系，前后端并行开发无阻塞',
@@ -941,6 +941,7 @@ export default {
   },
 
   proTable: {
+    columnSetting: '列设置',
     total: '共 {total} 条',
     density: '表格密度',
     checkAll: '全部勾选',
@@ -1274,7 +1275,7 @@ export default {
         step3Description: '将 type-check + unit + e2e 串成流水线，合并前自动执行。',
       },
       proTableAdvanced: {
-        title: 'ProTable 高阶示例',
+        title: 'SuperTable 高阶示例',
         description: '服务端分页模拟 + 批量操作 + 行内编辑 + 导出',
         selectedCount: '已选 {count} 项',
         batchDisable: '批量禁用',

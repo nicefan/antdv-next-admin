@@ -1,261 +1,98 @@
 <template>
   <div class="page-container">
     <div class="card">
-      <h2>{{ $t("examples.scaffold.uploadSystem.title") }}</h2>
+      <h2>{{ $t('examples.scaffold.uploadSystem.title') }}</h2>
       <p class="text-secondary mb-lg">
-        {{ $t("examples.scaffold.uploadSystem.description") }}
+        {{ $t('examples.scaffold.uploadSystem.description') }}
       </p>
 
       <a-space wrap class="mb-md">
         <a-tag color="processing"
-          >{{ $t("examples.scaffold.uploadSystem.uploading") }}
-          {{ uploadingCount }}</a-tag
+          >{{ $t('examples.scaffold.uploadSystem.uploading') }} {{ uploadingCount }}</a-tag
         >
         <a-tag color="success"
-          >{{ $t("examples.scaffold.uploadSystem.success") }}
-          {{ doneCount }}</a-tag
+          >{{ $t('examples.scaffold.uploadSystem.success') }} {{ doneCount }}</a-tag
         >
         <a-tag color="error"
-          >{{ $t("examples.scaffold.uploadSystem.failed") }}
-          {{ errorCount }}</a-tag
+          >{{ $t('examples.scaffold.uploadSystem.failed') }} {{ errorCount }}</a-tag
         >
       </a-space>
 
-      <a-upload-dragger
-        class="upload-system-dragger"
-        v-model:file-list="fileList"
-        name="file"
-        multiple
-        :custom-request="customRequest"
-        :accept="'.png,.jpg,.jpeg,.pdf,.csv'"
-        @preview="handlePreview"
-      >
-        <p class="ant-upload-drag-icon">
-          <InboxOutlined />
-        </p>
-        <p class="ant-upload-text">
-          {{ $t("examples.scaffold.uploadSystem.dragText") }}
-        </p>
-        <p class="ant-upload-hint">
-          {{ $t("examples.scaffold.uploadSystem.dragHint") }}
-        </p>
-      </a-upload-dragger>
+      <SuperForm @register="registerUploadForm" />
 
       <div class="toolbar">
         <a-space>
-          <a-button :disabled="errorCount === 0" @click="retryFailed">{{
-            $t("examples.scaffold.uploadSystem.retryButton")
+          <a-button :disabled="uploadingCount > 0 || fileList.length === 0" @click="retryFailed">{{
+            $t(errorCount ? 'examples.scaffold.uploadSystem.retryButton' : 'common.submit')
           }}</a-button>
-          <a-button
-            danger
-            :disabled="fileList.length === 0"
-            @click="clearAll"
-            >{{ $t("examples.scaffold.uploadSystem.clearButton") }}</a-button
-          >
+          <a-button danger :disabled="fileList.length === 0" @click="clearAll">{{
+            $t('examples.scaffold.uploadSystem.clearButton')
+          }}</a-button>
         </a-space>
         <div class="text-secondary">
-          {{ $t("examples.scaffold.uploadSystem.failureRate")
-          }}{{ Math.round(failureRate * 100) }}%
+          {{ $t('examples.scaffold.uploadSystem.failureRate') }}{{ Math.round(failureRate * 100) }}%
         </div>
       </div>
 
       <a-slider v-model:value="failureRate" :min="0" :max="0.9" :step="0.05" />
     </div>
-
-    <a-modal
-      v-model:open="previewOpen"
-      :title="previewTitle"
-      :footer="null"
-      width="720px"
-    >
-      <img :src="previewSrc" alt="preview" class="preview-image" />
-    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { InboxOutlined } from "@antdv-next/icons";
-import { message } from "antdv-next";
-import { computed, ref } from "vue";
+import { message } from 'antdv-next';
+import { SuperForm, useForm, type UIUploadFile } from 'superform-antdv';
+import { computed, ref } from 'vue';
 
-import { $t } from "@/locales";
+import { uploadDemoFile } from '@/api/facade/demo';
+import { $t } from '@/locales';
 
-type UploadFileItem = {
-  uid: string;
-  name: string;
-  status?: "error" | "success" | "done" | "uploading" | "removed";
-  percent?: number;
-  url?: string;
-  thumbUrl?: string;
-  originFileObj?: File;
-};
-
-const fileList = ref<UploadFileItem[]>([]);
+const fileList = ref<UIUploadFile[]>([]);
 const failureRate = ref(0.25);
 
-const previewOpen = ref(false);
-const previewSrc = ref("");
-const previewTitle = ref($t("examples.scaffold.uploadSystem.previewTitle"));
-
 const uploadingCount = computed(
-  () => fileList.value.filter((item) => item.status === "uploading").length,
+  () => fileList.value.filter((item) => item.status === 'uploading').length,
 );
-const doneCount = computed(
-  () =>
-    fileList.value.filter(
-      (item) => item.status === "done" || item.status === "success",
-    ).length,
-);
-const errorCount = computed(
-  () => fileList.value.filter((item) => item.status === "error").length,
-);
+const doneCount = computed(() => fileList.value.filter((item) => item.status === 'done').length);
+const errorCount = computed(() => fileList.value.filter((item) => item.status === 'error').length);
 
-const getBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = reject;
-  });
-};
-
-const markFileState = (
-  uid: string,
-  updater: (item: UploadFileItem) => void,
-) => {
-  const file = fileList.value.find((item) => item.uid === uid);
-  if (!file) {
-    return;
+// 上传、失败重试及提交等待统一交给 SuperForm 的 Upload 字段。
+const [registerUploadForm, uploadForm] = useForm({
+  subSpan: 24,
+  subItems: [
+    {
+      type: 'Upload',
+      field: 'files',
+      attrs: {
+        dragger: true,
+        class: 'upload-system-dragger',
+        accept: '.png,.jpg,.jpeg,.pdf,.csv',
+        multiple: true,
+        uploadMode: 'submit',
+        title: () => $t('examples.scaffold.uploadSystem.dragText'),
+        tip: $t('examples.scaffold.uploadSystem.dragHint'),
+        onChange: ({ fileList: files }: { fileList: UIUploadFile[] }) => {
+          fileList.value = files;
+        },
+        apis: {
+          upload: (data: FormData, config: RequestConfig) =>
+            uploadDemoFile(data, config, failureRate.value),
+        },
+      },
+    },
+  ],
+});
+const retryFailed = async () => {
+  try {
+    await uploadForm.submit();
+    message.success($t('common.success'));
+  } catch (error) {
+    message.error((error as { message?: string }).message || $t('common.error'));
   }
-  updater(file);
-  fileList.value = [...fileList.value];
 };
-
-const runUploadTask = (
-  uid: string,
-  callbacks?: {
-    onProgress?: (event: { percent: number }) => void;
-    onSuccess?: (response: { url: string }) => void;
-    onError?: (error: Error) => void;
-  },
-) => {
-  let percent = 0;
-
-  const timer = window.setInterval(() => {
-    percent += 8 + Math.round(Math.random() * 16);
-
-    if (percent >= 98) {
-      percent = 98;
-    }
-
-    markFileState(uid, (item) => {
-      item.status = "uploading";
-      item.percent = percent;
-    });
-
-    callbacks?.onProgress?.({ percent });
-  }, 160);
-
-  window.setTimeout(
-    () => {
-      window.clearInterval(timer);
-
-      const failed = Math.random() < failureRate.value;
-      if (failed) {
-        const error = new Error(
-          $t("examples.scaffold.uploadSystem.uploadFailedError"),
-        );
-
-        markFileState(uid, (item) => {
-          item.status = "error";
-          item.percent = 100;
-        });
-
-        callbacks?.onError?.(error);
-        return;
-      }
-
-      const preview = `https://picsum.photos/seed/${uid}/880/560`;
-
-      markFileState(uid, (item) => {
-        item.status = "done";
-        item.percent = 100;
-        item.url = item.url || preview;
-        item.thumbUrl = item.thumbUrl || preview;
-      });
-
-      callbacks?.onSuccess?.({ url: preview });
-    },
-    1400 + Math.round(Math.random() * 900),
-  );
-};
-
-interface CustomRequestOptions {
-  file: UploadFileItem;
-  onProgress?: (event: { percent: number }) => void;
-  onSuccess?: (response: { url: string }) => void;
-  onError?: (error: Error) => void;
-}
-
-const customRequest = (options: CustomRequestOptions) => {
-  const uid = options.file.uid;
-
-  runUploadTask(uid, {
-    onProgress: ({ percent }) => {
-      options.onProgress?.({ percent });
-    },
-    onSuccess: (response) => {
-      options.onSuccess?.(response);
-      message.success(
-        $t("examples.scaffold.uploadSystem.uploadSuccessMsg", {
-          name: options.file.name,
-        }),
-      );
-    },
-    onError: (error) => {
-      options.onError?.(error);
-      message.error(
-        $t("examples.scaffold.uploadSystem.uploadFailedMsg", {
-          name: options.file.name,
-        }),
-      );
-    },
-  });
-};
-
-const retryFailed = () => {
-  const failedFiles = fileList.value.filter((item) => item.status === "error");
-  if (failedFiles.length === 0) {
-    return;
-  }
-
-  failedFiles.forEach((item) => {
-    runUploadTask(item.uid);
-  });
-
-  message.info(
-    $t("examples.scaffold.uploadSystem.retryMsg", {
-      count: failedFiles.length,
-    }),
-  );
-};
-
-const clearAll = () => {
+const clearAll = async () => {
+  await uploadForm.resetFields();
   fileList.value = [];
-};
-
-const handlePreview = async (file: UploadFileItem) => {
-  if (file.url) {
-    previewSrc.value = file.url;
-  } else if (file.originFileObj) {
-    previewSrc.value = await getBase64(file.originFileObj);
-  } else {
-    message.warning($t("examples.scaffold.uploadSystem.previewNotSupported"));
-    return;
-  }
-
-  previewTitle.value = file.name;
-  previewOpen.value = true;
 };
 </script>
 
@@ -289,9 +126,7 @@ const handlePreview = async (file: UploadFileItem) => {
   background: transparent;
 }
 
-:deep(
-  .upload-system-dragger.ant-upload-wrapper .ant-upload-drag .ant-upload-btn
-) {
+:deep(.upload-system-dragger.ant-upload-wrapper .ant-upload-drag .ant-upload-btn) {
   background: transparent;
 }
 

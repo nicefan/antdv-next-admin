@@ -1,60 +1,9 @@
-// Authentication Types
-
-export interface LoginParams {
-  username: string;
-  password: string;
-  remember?: boolean;
-}
-
-export interface LoginResult {
-  token: string;
-  refreshToken?: string;
-  expiresIn?: number;
-}
-
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-  realName: string;
-  avatar: string;
-  phone: string;
-  gender?: 'male' | 'female';
-  birthDate?: string;
-  bio?: string;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  updatedAt: string;
-  roles: Role[];
-  permissions: Permission[];
-}
-
-export interface Role {
-  id: string;
-  name: string;
-  code: string;
-  description: string;
-  permissions: Permission[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type LocalizedText = Record<string, string>;
-
-export interface Permission {
-  id: string;
-  name: string | LocalizedText;
-  code: string;
-  description: string;
-  resource: string;
-  action: string;
-  type: 'menu' | 'button' | 'api';
-  parentId?: string;
-  path?: string;
-  component?: string;
-  icon?: string;
-  sort?: number;
-  status?: 'active' | 'inactive';
-  visible?: boolean;
-  children?: Permission[];
-}
+// 兼容既有业务和 Mock 的类型入口；接口契约只有 Codegen 一处来源。
+export type {
+  LoginParams,
+  LoginResult,
+  User,
+  Role,
+  LocalizedText,
+  Permission,
+} from '@/api/generated/admin/data-contracts';

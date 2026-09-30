@@ -1,264 +1,77 @@
-# Antdv Next Admin - Agent Guidelines
+# 业务开发约定
 
-A Vue 3 + TypeScript + Ant Design Vue admin scaffold with RBAC, theming, i18n (zh-CN/en-US/ja-JP/ko-KR), Tailwind CSS 4, Codemirror 6, and mock APIs.
+本项目是以 **SuperForm、api-datamodel、async-result-cache** 为核心的前端开发脚手架。本文件约束使用脚手架开发业务的方式，不记录脚手架改造计划、迁移状态或本次改造的验收任务。
 
-## Project Structure
+## 开发前确认
 
-```
-src/
-├── api/              # API layer - organized by domain (auth.ts, user.ts)
-├── assets/styles/    # Global styles (variables.css, animations.css, global.css)
-├── components/       # Reusable components (Layout/, Permission/, etc.)
-├── composables/      # Composition functions (usePermission.ts, useWatermark.ts)
-├── directives/       # Custom Vue directives (permission.ts)
-├── locales/          # i18n translations (zh-CN.ts, en-US.ts)
-├── router/           # Vue Router (routes.ts, guards.ts, utils.ts)
-├── stores/           # Pinia stores - one per domain (auth.ts, theme.ts, layout.ts)
-├── types/            # TypeScript interfaces/types (auth.ts, api.ts, router.ts)
-├── utils/            # Pure utility functions (request.ts, storage.ts, helpers.ts)
-└── views/            # Page components (dashboard/, system/, examples/)
+- 先理解需求和相关业务代码，复用项目已有的服务、权限、字典、字段及组件注册配置。
+- 按任务阅读 [AI_GUIDE.md](./AI_GUIDE.md) 中的本地依赖指南；实际 API 以安装版本、公开类型和项目配置为准，不猜方法名、属性名、接口字段或主键。
+- 指南只引用本地文件，不复制依赖库正文。入口缺失时说明缺失路径；依赖调整时维护入口。
+- 用户当次指令优先；目录内补充约定不得与本文件及用户指令冲突。
 
-mock/
-├── data/             # Mock datasets (users.data.ts, roles.data.ts)
-└── handlers/         # Mock API handlers (auth.mock.ts, user.mock.ts)
+## 页面与组件
 
-tests/
-├── e2e/              # End-to-end tests (*.spec.ts) - templates for future Playwright setup
-└── unit/             # Unit tests (*.spec.ts) - templates for future Vitest setup
-```
+- 业务表单、列表查询、表格编辑和详情使用 SuperForm、SuperTable、SuperDetail 及对应 hooks，直接编写原生 Schema。
+- 普通输入、Select、TreeSelect 等使用已注册字段；特殊业务交互通过注册自定义 field 补充，必要时使用 InputSlot。
+- 提交以 `await form.submit()` 返回的数据为准；使用标准动作回填和重置，声明提交所需的 Hidden 上下文字段。
+- 字典、联动、校验、展示和按钮权限复用统一配置，不在页面建立第二套表单或表格引擎。
+- 公共 API 从 `superform-antdv` 根入口导入；仅按用途使用公开的 `/components`、`/unplugin` 子路径，不依赖源码或 dist 内部实现。
+- 原生表格增强通过外部组件和 Adapter overrides 接入，自定义字段通过统一注册入口接入。页面使用已注册能力，不重复初始化。
+- 查询、分页、选择和 CRUD 由 SuperTable 管理；增强组件只负责原生交互，不重复维护业务状态。
+- 图表、布局、编辑器等组件保持独立职责；不使用旧 Pro 组件及其配置协议开发业务。
 
-## Build, Test, and Development Commands
+## Schema 复用与核心能力优先
 
-### Essential Commands
-```bash
-npm install              # Install all dependencies
-npm run dev              # Start dev server at http://localhost:3000 (with mock APIs)
-npm run build            # Production build → dist/
-npm run build:check      # vue-tsc type check + production build
-npm run build:demo       # Demo build for static hosting (browser-side mock)
-npm run preview          # Preview production build locally
-npm run type-check       # Run vue-tsc --noEmit (NO auto-fix)
+- 实现前先确认核心库的已有能力和默认行为，优先使用默认值、标准动作及公开扩展点；不因某个配置允许独立声明，就默认重复实现已有职责。
+- 同一业务字段优先维护一份 Schema，复用类型、标签、选项、默认值和校验；表格展示、编辑与详情的差异通过公开的显示、排除和渲染配置表达。
+- SuperTable 编辑表单默认复用 `columns`，`rowEditor.form` 只配置布局等必要属性，不重复声明同一批 `formItems`。确实需要独立字段结构时才配置 `subItems`，并说明复用不足的业务原因。
+- 搜索优先通过 `searchForm.subItems` 引用列字段名；查询与编辑的控件、必填条件或值形态确实不同时，按公开 API 配置必要差异，不新增自定义 Schema 合并协议。
+- 交付前核对重复字段配置及手写流程：核心库能够承担的查询、分页、选择、表单会话、提交状态、CRUD 和刷新职责交给核心库；业务特有处理只保留必要部分。
 
-# Testing (Vitest)
-npm run test:unit        # Run unit tests in watch mode
-npm run test:unit:run    # Run unit tests once
+## 国际化与配置初始化
 
-# Linting & Formatting
-npm run lint             # Lint with oxlint
-npm run lint:fix         # Auto-fix lint issues
-npm run format           # Format with oxfmt
-npm run format:check     # Check formatting
+- 切换语言时先持久化语言设置，再整页刷新；页面文案以刷新后的语言重新初始化。
+- 标签、提示、按钮文案和固定选项在页面 setup 或配置初始化时直接调用 `$t()`，例如 `label: $t('common.createTime')`；不为语言切换单独使用箭头函数、getter 或 `computed`。
+- Schema 和固定选项初始化一次，保持配置稳定；仅依赖实际业务状态或业务上下文的配置使用响应式值或函数。框架 API 明确要求函数时遵循实际签名。
+- AI 生成或修改业务代码时遵循上述默认方式，不新增仅用于动态国际化的包装层。
+
+## 接口与数据
+
+```text
+src/api/
+  service/          # Service、传输适配器、鉴权、响应转换、请求 Hooks
+  cache/            # 缓存作用域、注册与失效配置
+  generated/        # Codegen 专属：接口 API 和生成类型
+  facade/           # 接口组合、结果加工和缓存协调
 ```
 
-### Pre-commit Requirements
-**BEFORE any commit or PR:**
-1. Run `npm run type-check` - must exit 0 with no errors
-2. Run `npm run lint` - must exit 0 with no errors
-3. Run `npm run build` - must complete successfully
-4. For RBAC/auth changes: manually verify login with `admin/123456` and `user/123456`
+- 正式业务接口由 api-datamodel Codegen 从 OpenAPI 生成；生成目录只保存生成接口和类型，不混入配置、缓存或手写业务代码。
+- 接口调整先修正 OpenAPI 或生成配置，再重新生成；不手改生成文件，不猜测后端契约。
+- 无额外加工时直接调用生成 API；结果转换、接口组合、缓存读写协调放在 facade，不增加无意义转发层。
+- 生成接口依赖服务层提供的 createApi 或 Service。页面不拼接请求路径、不创建 Axios 实例、不绕过服务层发请求。
+- 后端地址、鉴权、令牌刷新、响应解包和全局反馈集中在 service；页面不重复解包或重复提示已被全局处理的错误。
+- 新增接口调用前确认实际服务、生成配置、方法签名和响应类型；缺少接口文档时说明缺失信息，不用 facade 掩盖错误契约。
 
-### Testing
-- **Vitest** is configured (`vitest.config.ts`): `environment: 'node'`, `globals: false`
-- Test files: `tests/unit/**/*.spec.ts` — must import `describe`/`it`/`expect` from vitest
-- **Playwright** e2e templates exist in `tests/e2e/` but Playwright is not yet installed
+## 缓存
 
-## Code Style Guidelines
+- 使用准确包名 `async-result-cache`，Vue 项目使用 `async-result-cache/vue`。
+- 字典、部门、公共选项等可复用结果适合缓存；分页搜索、实时日志和写请求不默认缓存。
+- 复用统一作用域，不在组件中重复注册缓存。身份相关数据隔离，退出登录、切换账号或租户时统一清理。
+- 参数必须 JSON 可序列化，并包含影响结果的上下文；不假定未提供的 TTL 或自动过期能力。
+- 写操作成功后失效相关缓存；需要即时新结果时再显式请求。普通写操作只清理相关缓存。
+- 不直接修改共享缓存结果；编辑前按实际类型复制。响应式读取、订阅生命周期和错误处理遵循本地指南。
 
-### Formatting (EditorConfig)
-- **Indentation**: 2 spaces (NO tabs)
-- **Line endings**: LF (Unix-style)
-- **Encoding**: UTF-8
-- **Final newline**: required
-- **Trailing whitespace**: trimmed (except in .md files)
+## 编码与执行
 
-### TypeScript
-- **Strict mode enabled** (`tsconfig.json`): all strict checks ON
-- **Path aliases**: use `@/` for `src/` (e.g., `import { useAuthStore } from '@/stores/auth'`)
-- **Type annotations**: explicit return types for public functions/composables
-- **Type definitions**: place shared types in `src/types/`, domain-specific types near usage
-- **No type suppression**: NEVER use `as any`, `@ts-ignore`, or `@ts-expect-error`
-
-### Vue Component Style
-**Component naming:**
-- **Files**: PascalCase for reusable components (`NotificationPanel.vue`, `ThemeToggle.vue`)
-- **Views**: route-based folders with `index.vue` (`src/views/dashboard/index.vue`)
-
-**Component structure (Composition API only):**
-```vue
-<template>
-  <!-- Template using script setup's reactive state -->
-</template>
-
-<script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import type { User } from '@/types/auth'
-
-// Props
-interface Props {
-  userId: string
-  mode?: 'edit' | 'view'
-}
-const props = withDefaults(defineProps<Props>(), {
-  mode: 'view'
-})
-
-// Emits
-const emit = defineEmits<{
-  save: [user: User]
-  cancel: []
-}>()
-
-// State
-const authStore = useAuthStore()
-const loading = ref(false)
-const user = computed(() => authStore.user)
-
-// Methods (prefer explicit function declarations)
-function handleSave() {
-  // Implementation
-}
-</script>
-
-<style scoped>
-/* Component-specific styles */
-</style>
-```
-
-### Import Ordering
-Group imports in this order (blank line between groups):
-```ts
-// 1. Vue core
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-
-// 2. Third-party libraries
-import { message } from 'antdv-next'
-import dayjs from 'dayjs'
-
-// 3. Project imports (@/ alias)
-import { useAuthStore } from '@/stores/auth'
-import { login, getUserInfo } from '@/api/auth'
-import type { User, LoginParams } from '@/types/auth'
-```
-
-### Naming Conventions
-| Type | Convention | Example |
-|------|-----------|---------|
-| Components | PascalCase | `NotificationPanel.vue`, `TabBar.vue` |
-| Composables | `useXxx.ts` | `usePermission.ts`, `useFullscreen.ts` |
-| Stores | Domain-based | `auth.ts`, `permission.ts`, `theme.ts` |
-| Types/Interfaces | PascalCase | `User`, `LoginParams`, `ApiResponse<T>` |
-| Functions | camelCase | `getUserInfo()`, `checkPermission()` |
-| Constants | SCREAMING_SNAKE_CASE | `TOKEN_KEY`, `API_BASE_URL` |
-
-### Error Handling
-- **Try/catch**: wrap all async operations with meaningful error messages
-- **Axios interceptors**: global error handling in `src/utils/request.ts`
-- **User feedback**: use `message.error()` or `notification.error()` from antdv-next
-```ts
-try {
-  const response = await getUserInfo()
-  // Success path
-} catch (error) {
-  console.error('Failed to fetch user info:', error)
-  message.error('获取用户信息失败')
-}
-```
-
-### State Management (Pinia)
-- **Setup stores only** (NOT options API)
-- **One store per domain** - no god-objects
-- **Store structure pattern:**
-```ts
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-
-export const useAuthStore = defineStore('auth', () => {
-  // State (ref)
-  const token = ref<string | null>(null)
-  
-  // Getters (computed)
-  const isLoggedIn = computed(() => !!token.value)
-  
-  // Actions (functions)
-  const setToken = (newToken: string | null) => {
-    token.value = newToken
-  }
-  
-  return { token, isLoggedIn, setToken }
-})
-```
-
-### Permission System Usage
-**Directive (in templates):**
-```vue
-<!-- Single permission (OR logic by default) -->
-<a-button v-permission="'user.create'">Create</a-button>
-
-<!-- Multiple permissions (OR logic) -->
-<a-button v-permission="['user.edit', 'user.delete']">Actions</a-button>
-
-<!-- ALL permissions required (AND logic) -->
-<a-button v-permission.all="['user.edit', 'user.approve']">Approve</a-button>
-```
-
-**Composable (in script):**
-```ts
-const { can, canAll, hasRole } = usePermission()
-
-if (can('user.create')) {
-  // User has permission
-}
-
-if (canAll(['user.edit', 'user.approve'])) {
-  // User has ALL permissions
-}
-```
-
-## Configuration & Environment
-
-### Environment Variables
-- **Development** (`.env.development`): `VITE_USE_MOCK=true`, `VITE_API_BASE_URL=/api`
-- **Production** (`.env.production`): `VITE_USE_MOCK=false`, set real API URL
-- **Never commit secrets** - use `.env.local` for sensitive values (gitignored)
-
-### Mock API System
-- **Auto-enabled in dev** via `vite-plugin-mock-dev-server`
-- **Handlers**: `mock/handlers/*.mock.ts` define endpoints
-- **Data**: `mock/data/*.data.ts` contain sample datasets
-- **Prefix**: all mock APIs use `/api` prefix (e.g., `/api/auth/login`)
-
-## Common Pitfalls to Avoid
-
-1. **Oxlint** lints `src/` and `mock/` — run `npm run lint` before committing. Oxfmt handles import sorting automatically.
-2. **Don't suppress TypeScript errors** - fix the root cause instead
-3. **Test files are templates** - don't try to run them without installing test frameworks
-4. **Mock users**: `admin/123456` has full permissions, `user/123456` has limited permissions
-5. **Dynamic routes**: permissions control route visibility via `src/router/guards.ts`
-6. **KeepAlive caching**: managed by `tabs` store - check cached component names
-
-## Commit Guidelines
-
-**Use Conventional Commits:**
-```
-type(scope): summary
-
-Examples:
-feat(auth): add biometric login support
-fix(permission): correct role-based route filtering
-refactor(layout): extract sidebar menu logic to composable
-docs(readme): update installation instructions
-```
-
-**Commit types:** `feat`, `fix`, `refactor`, `docs`, `style`, `test`, `chore`, `perf`
-
-## Pull Request Checklist
-
-- [ ] `npm run type-check` passes
-- [ ] `npm run build` succeeds
-- [ ] Manually tested login flow (if auth-related)
-- [ ] Manually verified permissions (if RBAC-related)
-- [ ] Screenshots/GIFs included (for UI changes)
-- [ ] Commit messages follow Conventional Commits
-- [ ] Changes are scoped (no unrelated refactors mixed in)
+- 修改前确认上下文，做任务范围内精确修改；代码简明、层次清晰，不做无意义抽离。
+- 只有需求边界无法判断，或改动必然影响其它业务且无法隔离时，先说明分析与建议并等待确认；常规实现自行判断。
+- 用户写错可能影响实现的包名、参数名、属性名等关键术语时，先指出并确认。
+- 注释使用中文，说明业务意图、设计原因、关键流程和边界；不写解释表面行为的逐行注释。
+- 不使用 `as any`、`@ts-ignore`、`@ts-expect-error` 绕过类型问题。
+- 除非用户明确要求，不新增或修改单元测试，不主动运行测试或构建。
+- 已安装依赖不重复安装；不主动执行 install 或 build。缺少依赖或生成工具时说明情况并提供执行提示。
+- 发现范围外问题简要告知，不扩展修改；不输出大段日志，不重复已确认的检查。
+- Git 提交消息使用中文；未要求提交时不自动提交。
+- 启动持续运行的 dev 服务前，说明工作目录、完整命令和端口；在 Codex 可见集成终端启动，打开终端面板并提供地址，不使用隐藏后台进程。
+- 只有用户明确提及 impeccable 或其子命令时使用该技能。
+- 交付时说明修改、实际执行的验证及未验证项，不把语法检查当成功能通过，也不声称未执行的检查已通过。

@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <ProSplitLayout :side-width="260">
+    <SplitLayout :side-width="260">
       <template #side>
         <!-- dict type list -->
         <div class="dict-types-header">
@@ -40,24 +40,35 @@
 
       <template #main>
         <!-- dict data list -->
-        <ProTable
+        <SuperTable
+          ref="nativeTableRef1"
+          :schema="{
+            slots: { extra: 'extra', bodyCell: 'bodyCell' },
+            columns: columns,
+            apis: { query: loadData },
+            params: nativeQuery1.params,
+            pagination: {},
+            indexColumn: false,
+            title: {
+              title: t('dict.dictDataTitle', { name: selectedTypeName }),
+            }.title,
+            attrs: {
+              onChange: nativeQuery1.onChange,
+              tableTools: undefined,
+              onReload: () => nativeTableRef1?.reload(),
+            },
+          }"
           v-if="selectedTypeCode"
           :key="selectedTypeCode"
-          :columns="columns"
-          :request="loadData"
-          :search="false"
-          :toolbar="{
-            title: t('dict.dictDataTitle', { name: selectedTypeName }),
-          }"
         >
-          <template #toolbar-actions>
+          <template #extra>
             <a-button type="primary" @click="handleAdd">
               <PlusOutlined /> {{ t('dict.createData') }}
             </a-button>
           </template>
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'status'">
-              <ProStatus :value="record.status" :status-map="dictStatusMap" />
+              <Status :value="record.status" :status-map="dictStatusMap" />
             </template>
             <template v-if="column.key === 'action'">
               <a-space :size="4">
@@ -72,78 +83,51 @@
               </a-space>
             </template>
           </template>
-        </ProTable>
+        </SuperTable>
         <div v-else class="dict-data-empty">
           <a-empty :description="t('dict.selectTypeHint')" />
         </div>
       </template>
-    </ProSplitLayout>
+    </SplitLayout>
 
     <!-- dict type modal -->
-    <a-modal v-model:open="typeModalVisible" :title="typeModalTitle" @ok="handleTypeSubmit">
-      <a-form :model="typeForm" :label-col="{ span: 6 }">
-        <a-form-item :label="t('dict.typeName')" required>
-          <a-input v-model:value="typeForm.name" :placeholder="t('dict.typeNamePlaceholder')" />
-        </a-form-item>
-        <a-form-item :label="t('dict.typeCode')" required>
-          <a-input
-            v-model:value="typeForm.code"
-            :placeholder="t('dict.typeCodePlaceholder')"
-            :disabled="!!typeForm.id"
-          />
-        </a-form-item>
-        <a-form-item :label="t('dict.description')">
-          <a-textarea
-            v-model:value="typeForm.description"
-            :placeholder="t('dict.descriptionPlaceholder')"
-            :rows="3"
-          />
-        </a-form-item>
-        <a-form-item :label="t('common.status')">
-          <a-radio-group v-model:value="typeForm.status">
-            <a-radio value="enabled">{{ t('dict.enabled') }}</a-radio>
-            <a-radio value="disabled">{{ t('dict.disabled') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-      </a-form>
+    <a-modal
+      v-model:open="typeModalVisible"
+      :title="typeModalTitle"
+      @ok="handleTypeSubmit"
+      :confirm-loading="typeSaving"
+      :closable="!typeSaving"
+      :mask-closable="!typeSaving"
+      :keyboard="!typeSaving"
+      :cancel-button-props="{ disabled: typeSaving }"
+    >
+      <SuperForm @register="registerTypeForm" />
     </a-modal>
 
     <!-- dict data modal -->
-    <a-modal v-model:open="dataModalVisible" :title="dataModalTitle" @ok="handleDataSubmit">
-      <a-form :model="dataForm" :label-col="{ span: 6 }">
-        <a-form-item :label="t('dict.dictLabel')" required>
-          <a-input v-model:value="dataForm.label" :placeholder="t('dict.labelPlaceholder')" />
-        </a-form-item>
-        <a-form-item :label="t('dict.dictValue')" required>
-          <a-input v-model:value="dataForm.value" :placeholder="t('dict.valuePlaceholder')" />
-        </a-form-item>
-        <a-form-item :label="t('dict.sort')">
-          <a-input-number v-model:value="dataForm.sort" :min="0" style="width: 100%" />
-        </a-form-item>
-        <a-form-item :label="t('common.status')">
-          <a-radio-group v-model:value="dataForm.status">
-            <a-radio value="enabled">{{ t('dict.enabled') }}</a-radio>
-            <a-radio value="disabled">{{ t('dict.disabled') }}</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item :label="t('dict.remark')">
-          <a-textarea
-            v-model:value="dataForm.remark"
-            :placeholder="t('dict.remarkPlaceholder')"
-            :rows="3"
-          />
-        </a-form-item>
-      </a-form>
+    <a-modal
+      v-model:open="dataModalVisible"
+      :title="dataModalTitle"
+      @ok="handleDataSubmit"
+      :confirm-loading="dataSaving"
+      :closable="!dataSaving"
+      :mask-closable="!dataSaving"
+      :keyboard="!dataSaving"
+      :cancel-button-props="{ disabled: dataSaving }"
+    >
+      <SuperForm @register="registerDataForm" />
     </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { DictType, DictData } from '@/types/dict';
-import type { ProTableColumn, ProStatusMap } from '@/types/pro';
+import type { StatusMap } from '@/types/display';
+import type { ExtColumnsItem } from 'superform-antdv';
 
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@antdv-next/icons';
 import { message, Modal } from 'antdv-next';
+import { SuperForm, useForm, SuperTable } from 'superform-antdv';
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -152,20 +136,19 @@ import {
   createDictType,
   updateDictType,
   deleteDictType,
-  getDictDataList,
   createDictData,
   updateDictData,
   deleteDictData,
-} from '@/api/dict';
-import ProSplitLayout from '@/components/Pro/ProSplitLayout/index.vue';
-import ProStatus from '@/components/Pro/ProStatus/index.vue';
-import ProTable from '@/components/Pro/ProTable/index.vue';
+} from '@/api/facade/dict';
+import { dictApi } from '@/api/generated/admin/Dict';
+import Status from '@/components/Display/Status/index.vue';
+import SplitLayout from '@/components/Layout/SplitLayout/index.vue';
 import { useDictStore } from '@/stores/dict';
 
 const { t } = useI18n();
 const dictStore = useDictStore();
 
-const dictStatusMap = computed<ProStatusMap>(() => ({
+const dictStatusMap = computed<StatusMap>(() => ({
   enabled: { text: t('dict.enabled'), color: '#52c41a' },
   disabled: { text: t('dict.disabled'), color: '#bfbfbf' },
 }));
@@ -203,41 +186,95 @@ const dataForm = ref<Partial<DictData>>({
   remark: '',
 });
 
+const typeSaving = ref(false);
+const dataSaving = ref(false);
+const statusOptions = () => [
+  { label: t('dict.enabled'), value: 'enabled' },
+  { label: t('dict.disabled'), value: 'disabled' },
+];
+const [registerTypeForm, typeFormActions] = useForm({
+  dataSource: typeForm,
+  subSpan: 24,
+  attrs: { labelCol: { span: 6 } },
+  subItems: [
+    { type: 'Hidden', field: 'id' },
+    {
+      type: 'Input',
+      field: 'name',
+      label: () => t('dict.typeName'),
+      required: true,
+      rules: { message: t('dict.requiredFields') },
+    },
+    {
+      type: 'Input',
+      field: 'code',
+      label: () => t('dict.typeCode'),
+      required: true,
+      rules: { message: t('dict.requiredFields') },
+      disabled: () => !!typeForm.value.id,
+    },
+    {
+      type: 'TextArea',
+      field: 'description',
+      label: () => t('dict.description'),
+      attrs: { rows: 3 },
+    },
+    {
+      type: 'RadioGroup',
+      field: 'status',
+      label: () => t('common.status'),
+      options: { source: statusOptions },
+    },
+  ],
+});
+const [registerDataForm, dataFormActions] = useForm({
+  dataSource: dataForm,
+  subSpan: 24,
+  attrs: { labelCol: { span: 6 } },
+  subItems: [
+    { type: 'Hidden', field: 'id' },
+    { type: 'Hidden', field: 'typeCode' },
+    {
+      type: 'Input',
+      field: 'label',
+      label: () => t('dict.dictLabel'),
+      required: true,
+      rules: { message: t('dict.requiredFields') },
+    },
+    {
+      type: 'Input',
+      field: 'value',
+      label: () => t('dict.dictValue'),
+      required: true,
+      rules: { message: t('dict.requiredFields') },
+    },
+    {
+      type: 'InputNumber',
+      field: 'sort',
+      label: () => t('dict.sort'),
+      attrs: { min: 0, precision: 0, style: { width: '100%' } },
+    },
+    {
+      type: 'RadioGroup',
+      field: 'status',
+      label: () => t('common.status'),
+      options: { source: statusOptions },
+    },
+    { type: 'TextArea', field: 'remark', label: () => t('dict.remark'), attrs: { rows: 3 } },
+  ],
+});
+
 // table columns
-const columns: ProTableColumn[] = [
+const columns: ExtColumnsItem[] = [
+  { field: 'label', label: () => t('dict.dictLabel'), columnProps: { key: 'label' } },
+  { field: 'value', label: () => t('dict.dictValue'), columnProps: { key: 'value' } },
+  { field: 'sort', label: () => t('dict.sort'), columnProps: { key: 'sort', width: 80 } },
+  { field: 'status', label: () => t('common.status'), columnProps: { key: 'status', width: 80 } },
+  { field: 'remark', label: () => t('dict.remark'), columnProps: { key: 'remark' } },
   {
-    title: t('dict.dictLabel'),
-    dataIndex: 'label',
-    key: 'label',
-  },
-  {
-    title: t('dict.dictValue'),
-    dataIndex: 'value',
-    key: 'value',
-  },
-  {
-    title: t('dict.sort'),
-    dataIndex: 'sort',
-    key: 'sort',
-    width: 80,
-  },
-  {
-    title: t('common.status'),
-    dataIndex: 'status',
-    key: 'status',
-    width: 80,
-  },
-  {
-    title: t('dict.remark'),
-    dataIndex: 'remark',
-    key: 'remark',
-  },
-  {
-    title: t('common.actions'),
-    dataIndex: 'action',
-    key: 'action',
-    width: 150,
-    fixed: 'right',
+    field: 'action',
+    label: () => t('common.actions'),
+    columnProps: { key: 'action', width: 150, fixed: 'right' },
   },
 ];
 
@@ -245,11 +282,10 @@ const columns: ProTableColumn[] = [
 const loadDictTypes = async () => {
   try {
     const response = await getDictTypes();
-    if (response.code === 200) {
-      dictTypes.value = response.data;
-      if (dictTypes.value.length > 0 && !selectedTypeCode.value) {
-        selectedTypeCode.value = dictTypes.value[0].code;
-      }
+
+    dictTypes.value = response;
+    if (dictTypes.value.length > 0 && !selectedTypeCode.value) {
+      selectedTypeCode.value = dictTypes.value[0].code;
     }
   } catch (error: unknown) {
     console.error(t('dict.loadTypeFailed'), (error as Error).message);
@@ -257,27 +293,31 @@ const loadDictTypes = async () => {
 };
 
 // load dict data list
-const loadData = async (params: Record<string, unknown>) => {
+const loadData = async (params: Record<string, unknown>, config?: RequestConfig) => {
   try {
-    const response = await getDictDataList({
-      typeCode: selectedTypeCode.value,
-      page: params.current as number,
-      pageSize: params.pageSize as number,
-    });
-    if (response.code === 200) {
-      return {
-        data: response.data.list,
-        total: response.data.total,
-        success: true,
-      };
-    }
+    const response = await dictApi.getDictDataList(
+      {
+        typeCode: selectedTypeCode.value,
+        page: params.current as number,
+        pageSize: params.pageSize as number,
+      },
+      config,
+    );
+
+    return {
+      records: response.list,
+      total: response.total,
+      current: Number(params.current ?? 1),
+      size: Number(params.pageSize ?? 10),
+    };
   } catch (error: unknown) {
     console.error(t('dict.loadDataFailed'), (error as Error).message);
   }
   return {
-    data: [],
+    records: [],
     total: 0,
-    success: false,
+    current: Number(params.current ?? 1),
+    size: Number(params.pageSize ?? 10),
   };
 };
 
@@ -310,16 +350,17 @@ const handleDeleteType = (type: DictType) => {
     content: t('dict.confirmDeleteType', { name: type.name }),
     onOk: async () => {
       try {
-        const response = await deleteDictType(type.id);
-        if (response.code === 200) {
-          message.success(t('dict.deleteSuccess'));
-          loadDictTypes();
-          if (selectedTypeCode.value === type.code) {
-            selectedTypeCode.value = '';
-          }
+        await deleteDictType(type.id);
+
+        message.success(t('dict.deleteSuccess'));
+        loadDictTypes();
+        void dictStore.refreshDictData();
+        void nativeTableRef1.value?.reload();
+        if (selectedTypeCode.value === type.code) {
+          selectedTypeCode.value = '';
         }
       } catch (_error: unknown) {
-        message.error(t('dict.deleteFailed'));
+        // 校验由表单展示，请求错误由统一 Service Hooks 反馈。
       }
     },
   });
@@ -327,29 +368,31 @@ const handleDeleteType = (type: DictType) => {
 
 // submit dict type
 const handleTypeSubmit = async () => {
-  if (!typeForm.value.name || !typeForm.value.code) {
-    message.warning(t('dict.requiredFields'));
-    return;
-  }
-
+  if (typeSaving.value) return;
+  typeSaving.value = true;
   try {
+    typeForm.value = await typeFormActions.submit();
     if (typeForm.value.id) {
-      const response = await updateDictType(typeForm.value.id, typeForm.value);
-      if (response.code === 200) {
-        message.success(t('dict.updateSuccess'));
-        typeModalVisible.value = false;
-        loadDictTypes();
-      }
+      await updateDictType(typeForm.value.id, typeForm.value);
+
+      message.success(t('dict.updateSuccess'));
+      typeModalVisible.value = false;
+      loadDictTypes();
+      void dictStore.refreshDictData();
+      void nativeTableRef1.value?.reload();
     } else {
-      const response = await createDictType(typeForm.value);
-      if (response.code === 200) {
-        message.success(t('dict.createSuccess'));
-        typeModalVisible.value = false;
-        loadDictTypes();
-      }
+      await createDictType(typeForm.value);
+
+      message.success(t('dict.createSuccess'));
+      typeModalVisible.value = false;
+      loadDictTypes();
+      void dictStore.refreshDictData();
+      void nativeTableRef1.value?.reload();
     }
-  } catch (_error: unknown) {
-    message.error(t('dict.operateFailed'));
+  } catch (error: unknown) {
+    // 校验由表单展示，请求错误由统一 Service Hooks 反馈。
+  } finally {
+    typeSaving.value = false;
   }
 };
 
@@ -379,13 +422,13 @@ const handleDelete = (record: DictData) => {
     content: t('dict.confirmDeleteData', { label: record.label }),
     onOk: async () => {
       try {
-        const response = await deleteDictData(record.id);
-        if (response.code === 200) {
-          message.success(t('dict.deleteSuccess'));
-          dictStore.refreshDictData();
-        }
+        await deleteDictData(record.id);
+
+        message.success(t('dict.deleteSuccess'));
+        void dictStore.refreshDictData();
+        void nativeTableRef1.value?.reload();
       } catch (_error: unknown) {
-        message.error(t('dict.deleteFailed'));
+        // 校验由表单展示，请求错误由统一 Service Hooks 反馈。
       }
     },
   });
@@ -393,34 +436,39 @@ const handleDelete = (record: DictData) => {
 
 // submit dict data
 const handleDataSubmit = async () => {
-  if (!dataForm.value.label || !dataForm.value.value) {
-    message.warning(t('dict.requiredFields'));
-    return;
-  }
-
+  if (dataSaving.value) return;
+  dataSaving.value = true;
   try {
+    dataForm.value = await dataFormActions.submit();
     if (dataForm.value.id) {
-      const response = await updateDictData(dataForm.value.id, dataForm.value);
-      if (response.code === 200) {
-        message.success(t('dict.updateSuccess'));
-        dataModalVisible.value = false;
-        dictStore.refreshDictData();
-      }
+      await updateDictData(dataForm.value.id, dataForm.value);
+
+      message.success(t('dict.updateSuccess'));
+      dataModalVisible.value = false;
+      void dictStore.refreshDictData();
+      void nativeTableRef1.value?.reload();
     } else {
-      const response = await createDictData(dataForm.value);
-      if (response.code === 200) {
-        message.success(t('dict.createSuccess'));
-        dataModalVisible.value = false;
-        dictStore.refreshDictData();
-      }
+      await createDictData(dataForm.value);
+
+      message.success(t('dict.createSuccess'));
+      dataModalVisible.value = false;
+      void dictStore.refreshDictData();
+      void nativeTableRef1.value?.reload();
     }
-  } catch (_error: unknown) {
-    message.error(t('dict.operateFailed'));
+  } catch (error: unknown) {
+    // 校验由表单展示，请求错误由统一 Service Hooks 反馈。
+  } finally {
+    dataSaving.value = false;
   }
 };
 
 // init
 loadDictTypes();
+
+const nativeTableRef1 = ref<{ reload: () => Promise<unknown> }>();
+const nativeQuery1 = useTableParams(() => columns);
+
+import { useTableParams } from '@/composables/useTableParams';
 </script>
 
 <style scoped lang="scss">

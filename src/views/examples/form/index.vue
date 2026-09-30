@@ -4,15 +4,18 @@
       <h2>{{ $t('form.title') }}</h2>
       <p class="mb-lg">{{ $t('exampleForm.description') }}</p>
 
-      <ProForm
+      <SuperForm
         ref="formRef"
-        :form-items="formItems"
-        :grid="{ cols: 2, gutter: 16 }"
-        @finish="handleSubmit"
+        :schema="{
+          slots: { after: 'after' },
+          subSpan: 12,
+          subItems: formItems,
+          onSubmit: handleSubmit,
+        }"
       >
-        <template #footer>
+        <template #after>
           <a-space>
-            <a-button type="primary" html-type="submit">
+            <a-button type="primary" @click="formRef?.submit()">
               {{ $t('common.submit') }}
             </a-button>
             <a-button @click="handleReset">
@@ -20,19 +23,20 @@
             </a-button>
           </a-space>
         </template>
-      </ProForm>
+      </SuperForm>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { ProFormItem, ProFormOption } from '@/types/pro';
+import type { RemoteOption } from '@/components/Fields/RemoteSelect/index.vue';
 import type { TreeSelectProps } from 'antdv-next';
+import type { UniOption } from 'superform-antdv';
 
 import { message } from 'antdv-next';
+import { SuperForm } from 'superform-antdv';
 import { computed, ref } from 'vue';
 
-import ProForm from '@/components/Pro/ProForm/index.vue';
 import { $t } from '@/locales';
 import { commonRules } from '@/utils/formRules';
 
@@ -51,11 +55,11 @@ const lazyTreeData = ref<RemoteTreeNode[]>([
   { title: 'South Region', value: 'south-region' },
   { title: 'Headquarters', value: 'headquarters', isLeaf: true },
 ]);
-function toProFormOptions(nodes: RemoteTreeNode[]): ProFormOption[] {
+function toRemoteOptions(nodes: RemoteTreeNode[]): RemoteOption[] {
   return nodes.map((node) => ({
     label: node.title,
     value: node.value,
-    children: node.children ? toProFormOptions(node.children) : undefined,
+    children: node.children ? toRemoteOptions(node.children) : undefined,
   }));
 }
 
@@ -63,174 +67,166 @@ async function waitForRemoteData(): Promise<void> {
   await new Promise<void>((resolve) => setTimeout(resolve, 500));
 }
 
-async function searchRemoteUserOptions(keyword: string): Promise<ProFormOption[]> {
+async function searchRemoteUserOptions(keyword: string): Promise<RemoteOption[]> {
   await waitForRemoteData();
   return searchRemoteUsers(keyword);
 }
 
-async function searchRemoteTreeOptions(keyword: string): Promise<ProFormOption[]> {
+async function searchRemoteTreeOptions(keyword: string): Promise<RemoteOption[]> {
   await waitForRemoteData();
   const results = searchRemoteTree(keyword);
-  return toProFormOptions(results);
+  return toRemoteOptions(results);
 }
 
-const formItems = computed<ProFormItem[]>(() => [
+const formItems = computed<UniOption[]>(() => [
   {
-    name: 'username',
-    label: $t('user.username'),
-    type: 'input',
+    type: 'Input',
+    field: 'username',
+    label: () => $t('user.username'),
     required: true,
     rules: [commonRules.length(3, 20), commonRules.username()],
-    props: {
+    dynamicAttrs: () => ({
       placeholder: $t('login.usernamePlaceholder'),
-    },
+    }),
   },
   {
-    name: 'email',
-    label: $t('user.email'),
-    type: 'input',
+    type: 'Input',
+    field: 'email',
+    label: () => $t('user.email'),
     required: true,
     rules: [commonRules.email()],
   },
   {
-    name: 'password',
-    label: $t('login.password'),
-    type: 'password',
+    type: 'InputPassword',
+    field: 'password',
+    label: () => $t('login.password'),
     required: true,
     rules: [commonRules.password()],
   },
   {
-    name: 'confirmPassword',
-    label: $t('profile.confirmPassword'),
-    type: 'password',
+    type: 'InputPassword',
+    field: 'confirmPassword',
+    label: () => $t('profile.confirmPassword'),
     required: true,
-    dependencies: ['password'],
-    rules: [
-      ({ getFieldValue }: { getFieldValue: (field: string) => unknown }) =>
-        commonRules.confirmPassword(getFieldValue),
-    ],
+    formItemProps: { dependencies: ['password'] },
+    rules: [commonRules.confirmPassword()],
   },
+  { type: 'Input', field: 'phone', label: () => $t('user.phone'), rules: [commonRules.phone()] },
   {
-    name: 'phone',
-    label: $t('user.phone'),
-    type: 'input',
-    rules: [commonRules.phone()],
-  },
-  {
-    name: 'age',
-    label: $t('exampleForm.age'),
-    type: 'number',
+    type: 'InputNumber',
+    field: 'age',
+    label: () => $t('exampleForm.age'),
     rules: [commonRules.range(1, 150, $t('exampleForm.ageRange'))],
-    props: {
+    dynamicAttrs: () => ({
       min: 1,
       max: 150,
+    }),
+  },
+  {
+    type: 'Select',
+    field: 'gender',
+    label: () => $t('user.gender'),
+    required: true,
+    options: {
+      source: () => [
+        { label: $t('user.male'), value: 'male' },
+        { label: $t('user.female'), value: 'female' },
+      ],
     },
   },
   {
-    name: 'gender',
-    label: $t('user.gender'),
-    type: 'select',
+    type: 'Select',
+    field: 'role',
+    label: () => $t('user.role'),
     required: true,
-    options: [
-      { label: $t('user.male'), value: 'male' },
-      { label: $t('user.female'), value: 'female' },
-    ],
+    options: {
+      source: () => [
+        { label: $t('exampleForm.roles.admin'), value: 'admin' },
+        { label: $t('exampleForm.roles.user'), value: 'user' },
+        { label: $t('exampleForm.roles.guest'), value: 'guest' },
+      ],
+    },
   },
   {
-    name: 'role',
-    label: $t('user.role'),
-    type: 'select',
-    required: true,
-    options: [
-      { label: $t('exampleForm.roles.admin'), value: 'admin' },
-      { label: $t('exampleForm.roles.user'), value: 'user' },
-      { label: $t('exampleForm.roles.guest'), value: 'guest' },
-    ],
+    type: 'CheckboxGroup',
+    field: 'interests',
+    label: () => $t('exampleForm.interests'),
+    options: {
+      source: () => [
+        { label: $t('exampleForm.interestOptions.reading'), value: 'reading' },
+        { label: $t('exampleForm.interestOptions.sports'), value: 'sports' },
+        { label: $t('exampleForm.interestOptions.music'), value: 'music' },
+        { label: $t('exampleForm.interestOptions.travel'), value: 'travel' },
+      ],
+    },
   },
   {
-    name: 'interests',
-    label: $t('exampleForm.interests'),
-    type: 'checkbox',
-    options: [
-      { label: $t('exampleForm.interestOptions.reading'), value: 'reading' },
-      { label: $t('exampleForm.interestOptions.sports'), value: 'sports' },
-      { label: $t('exampleForm.interestOptions.music'), value: 'music' },
-      { label: $t('exampleForm.interestOptions.travel'), value: 'travel' },
-    ],
-  },
-  {
-    name: 'birthDate',
-    label: $t('exampleForm.birthDate'),
-    type: 'datePicker',
-    props: {
+    type: 'DatePicker',
+    field: 'birthDate',
+    label: () => $t('exampleForm.birthDate'),
+    dynamicAttrs: () => ({
       format: 'YYYY-MM-DD',
-    },
+    }),
   },
+  { type: 'Switch', field: 'status', label: () => $t('common.status'), initialValue: true },
+  { type: 'Rate', field: 'score', label: () => $t('exampleForm.score'), initialValue: 3 },
   {
-    name: 'status',
-    label: $t('common.status'),
-    type: 'switch',
-    valuePropName: 'checked',
-    initialValue: true,
-  },
-  {
-    name: 'score',
-    label: $t('exampleForm.score'),
-    type: 'rate',
-    initialValue: 3,
-  },
-  {
-    name: 'progress',
-    label: $t('exampleForm.progress'),
-    type: 'slider',
+    type: 'Slider',
+    field: 'progress',
+    label: () => $t('exampleForm.progress'),
     initialValue: 50,
-    props: {
+    dynamicAttrs: () => ({
       min: 0,
       max: 100,
-    },
+    }),
   },
   {
-    name: 'remoteUser',
-    label: $t('exampleForm.remote.selectTitle'),
-    type: 'select',
-    searchMode: 'remote',
-    remoteSearch: searchRemoteUserOptions,
-    placeholder: $t('exampleForm.remote.selectPlaceholder'),
-    tooltip: $t('exampleForm.remote.selectHint'),
+    type: 'RemoteSelect',
+    field: 'remoteUser',
+    label: () => $t('exampleForm.remote.selectTitle'),
+    tooltip: () => $t('exampleForm.remote.selectHint'),
+    dynamicAttrs: () => ({
+      request: searchRemoteUserOptions,
+      placeholder: $t('exampleForm.remote.selectPlaceholder'),
+    }),
   },
   {
-    name: 'lazyOrganization',
-    label: $t('exampleForm.remote.lazyTreeTitle'),
-    type: 'treeSelect',
-    options: toProFormOptions(lazyTreeData.value),
-    placeholder: $t('exampleForm.remote.lazyTreePlaceholder'),
-    tooltip: $t('exampleForm.remote.lazyTreeHint'),
-    searchable: false,
-    props: {
-      loadData: loadLazyTreeData,
-      loading: lazyTreeLoading.value,
-    },
+    type: 'TreeSelect',
+    field: 'lazyOrganization',
+    label: () => $t('exampleForm.remote.lazyTreeTitle'),
+    options: { source: () => toRemoteOptions(lazyTreeData.value) },
+    tooltip: () => $t('exampleForm.remote.lazyTreeHint'),
+    dynamicAttrs: () => ({
+      placeholder: $t('exampleForm.remote.lazyTreePlaceholder'),
+      showSearch: false,
+      ...{
+        loadData: loadLazyTreeData,
+        loading: lazyTreeLoading.value,
+      },
+    }),
   },
   {
-    name: 'remoteOrganization',
-    label: $t('exampleForm.remote.searchTreeTitle'),
-    type: 'treeSelect',
-    searchMode: 'remote',
-    remoteSearch: searchRemoteTreeOptions,
-    placeholder: $t('exampleForm.remote.searchTreePlaceholder'),
-    tooltip: $t('exampleForm.remote.searchTreeHint'),
+    type: 'RemoteTreeSelect',
+    field: 'remoteOrganization',
+    label: () => $t('exampleForm.remote.searchTreeTitle'),
+    tooltip: () => $t('exampleForm.remote.searchTreeHint'),
+    dynamicAttrs: () => ({
+      request: searchRemoteTreeOptions,
+      placeholder: $t('exampleForm.remote.searchTreePlaceholder'),
+      tree: true,
+    }),
   },
   {
-    name: 'bio',
-    label: $t('user.bio'),
-    type: 'textarea',
-    colSpan: 2,
-    props: {
+    type: 'TextArea',
+    field: 'bio',
+    label: () => $t('user.bio'),
+    span: 2 * 12,
+    dynamicAttrs: () => ({
       rows: 4,
       maxLength: 500,
       showCount: true,
       placeholder: $t('exampleForm.bioPlaceholder'),
-    },
+    }),
   },
 ]);
 

@@ -4,23 +4,22 @@
       <h2>{{ $t('examples.scaffold.masterDetail.title') }}</h2>
       <p class="text-secondary mb-lg">{{ $t('examples.scaffold.masterDetail.description') }}</p>
 
-      <ProTable
-        layout="content"
-        :columns="columns"
+      <SuperTable
+        :schema="{
+          slots: { bodyCell: 'bodyCell' },
+          columns: columns,
+          pagination: { pageSize: 8 },
+          indexColumn: false,
+          attrs: { tableTools: false, rowKey: 'id', onRow: buildRowProps },
+        }"
         :data-source="listData"
-        :search="false"
-        :toolbar="false"
-        row-key="id"
-        :pagination="{ pageSize: 8 }"
-        :show-index-column="false"
-        :on-row="buildRowProps"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'status'">
             <a-tag :color="getStatusColor(record.status)">{{ getStatusText(record.status) }}</a-tag>
           </template>
         </template>
-      </ProTable>
+      </SuperTable>
     </div>
 
     <a-drawer
@@ -30,7 +29,7 @@
       :destroy-on-hidden="false"
     >
       <template v-if="activeRecord">
-        <ProDetail
+        <DetailPanel
           :title="`#${activeRecord.id}`"
           :sub-title="$t('examples.scaffold.masterDetail.ticketNumber')"
           :tags="[
@@ -39,9 +38,8 @@
               color: getStatusColor(activeRecord.status),
             },
           ]"
-          :descriptions="detailColumns"
-          :data="activeRecord"
-          :description-column="1"
+          :schema="{ subItems: detailColumns, attrs: { column: 1, bordered: true, size: 'small' } }"
+          :data-source="activeRecord"
           :tabs="drawerTabs"
           v-model:active-tab="activeTab"
         >
@@ -58,19 +56,20 @@
               </a-timeline-item>
             </a-timeline>
           </template>
-        </ProDetail>
+        </DetailPanel>
       </template>
     </a-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { ProDescriptionItem, ProDetailTab, ProTableColumn } from '@/types/pro';
+import type { DetailTab } from '@/types/display';
+import type { ExtColumnsItem } from 'superform-antdv';
 
+import { SuperTable } from 'superform-antdv';
 import { computed, ref } from 'vue';
 
-import ProDetail from '@/components/Pro/ProDetail/index.vue';
-import ProTable from '@/components/Pro/ProTable/index.vue';
+import DetailPanel from '@/components/Display/DetailPanel.vue';
 import { $t } from '@/locales';
 
 type TicketStatus = 'open' | 'processing' | 'closed';
@@ -133,23 +132,47 @@ const listData = ref<TicketRecord[]>(
   }),
 );
 
-const columns = computed<ProTableColumn[]>(() => [
-  { title: $t('examples.scaffold.masterDetail.colTicketNumber'), dataIndex: 'id', width: 120 },
-  { title: $t('examples.scaffold.masterDetail.colTitle'), dataIndex: 'title', ellipsis: true },
-  { title: $t('examples.scaffold.masterDetail.colOwner'), dataIndex: 'owner', width: 120 },
-  { title: $t('examples.scaffold.masterDetail.colPriority'), dataIndex: 'priority', width: 100 },
-  { title: $t('examples.scaffold.masterDetail.colStatus'), dataIndex: 'status', width: 120 },
-  { title: $t('examples.scaffold.masterDetail.colCreatedAt'), dataIndex: 'createdAt', width: 190 },
+const columns = computed<ExtColumnsItem[]>(() => [
+  {
+    field: 'id',
+    label: () => $t('examples.scaffold.masterDetail.colTicketNumber'),
+    columnProps: { width: 120 },
+  },
+  {
+    field: 'title',
+    label: () => $t('examples.scaffold.masterDetail.colTitle'),
+    columnProps: { ellipsis: true },
+  },
+  {
+    field: 'owner',
+    label: () => $t('examples.scaffold.masterDetail.colOwner'),
+    columnProps: { width: 120 },
+  },
+  {
+    field: 'priority',
+    label: () => $t('examples.scaffold.masterDetail.colPriority'),
+    columnProps: { width: 100 },
+  },
+  {
+    field: 'status',
+    label: () => $t('examples.scaffold.masterDetail.colStatus'),
+    columnProps: { width: 120 },
+  },
+  {
+    field: 'createdAt',
+    label: () => $t('examples.scaffold.masterDetail.colCreatedAt'),
+    columnProps: { width: 190 },
+  },
 ]);
 
-const detailColumns = computed<ProDescriptionItem[]>(() => [
-  { label: $t('examples.scaffold.masterDetail.titleLabel'), dataIndex: 'title' },
-  { label: $t('examples.scaffold.masterDetail.ownerLabel'), dataIndex: 'owner' },
-  { label: $t('examples.scaffold.masterDetail.priorityLabel'), dataIndex: 'priority' },
-  { label: $t('examples.scaffold.masterDetail.createdAtLabel'), dataIndex: 'createdAt' },
+const detailColumns = computed<ExtColumnsItem[]>(() => [
+  { field: 'title', label: () => $t('examples.scaffold.masterDetail.titleLabel') },
+  { field: 'owner', label: () => $t('examples.scaffold.masterDetail.ownerLabel') },
+  { field: 'priority', label: () => $t('examples.scaffold.masterDetail.priorityLabel') },
+  { field: 'createdAt', label: () => $t('examples.scaffold.masterDetail.createdAtLabel') },
 ]);
 
-const drawerTabs = computed<ProDetailTab[]>(() => [
+const drawerTabs = computed<DetailTab[]>(() => [
   { key: 'desc', label: $t('examples.scaffold.masterDetail.descTab') },
   { key: 'logs', label: $t('examples.scaffold.masterDetail.logsTab') },
 ]);

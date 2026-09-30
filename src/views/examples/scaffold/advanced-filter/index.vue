@@ -36,71 +36,61 @@
           <a-empty :description="$t('examples.scaffold.advancedFilter.emptyConditions')" />
         </div>
 
-        <div v-for="(condition, index) in conditions" :key="condition.id" class="condition-row">
-          <div class="condition-index">{{ index + 1 }}</div>
+        <SuperForm
+          v-for="condition in conditions"
+          :key="condition.id + condition.field + condition.operator"
+          :schema="createConditionSchema(condition)"
+          class="condition-form"
+        >
+          <template #conditionValue>
+            <div class="value-editor">
+              <template v-if="isSelectField(condition.field)">
+                <a-select
+                  v-if="condition.operator === 'in'"
+                  v-model:value="condition.value"
+                  mode="multiple"
+                  :placeholder="getValuePlaceholder(condition)"
+                  :options="getSelectOptions(condition.field)"
+                />
+                <a-select
+                  v-else
+                  v-model:value="condition.value"
+                  :placeholder="getValuePlaceholder(condition)"
+                  :options="getSelectOptions(condition.field)"
+                />
+              </template>
 
-          <a-select
-            class="field-select"
-            :value="condition.field"
-            :options="fieldOptions"
-            @change="(field: unknown) => onFieldChange(condition, field as FieldKey)"
-          />
+              <template v-else-if="isNumberField(condition.field)">
+                <a-input-number
+                  v-model:value="condition.value"
+                  class="value-number"
+                  :placeholder="getValuePlaceholder(condition)"
+                />
+                <a-input-number
+                  v-if="condition.operator === 'between'"
+                  v-model:value="condition.value2"
+                  class="value-number"
+                  :placeholder="$t('examples.scaffold.advancedFilter.secondValue')"
+                />
+              </template>
 
-          <a-select
-            class="operator-select"
-            :value="condition.operator"
-            :options="getOperatorOptions(condition.field)"
-            @change="(operator: unknown) => onOperatorChange(condition, operator as Operator)"
-          />
-
-          <div class="value-editor">
-            <template v-if="isSelectField(condition.field)">
-              <a-select
-                v-if="condition.operator === 'in'"
-                v-model:value="condition.value"
-                mode="multiple"
-                :placeholder="getValuePlaceholder(condition)"
-                :options="getSelectOptions(condition.field)"
-              />
-              <a-select
-                v-else
-                v-model:value="condition.value"
-                :placeholder="getValuePlaceholder(condition)"
-                :options="getSelectOptions(condition.field)"
-              />
-            </template>
-
-            <template v-else-if="isNumberField(condition.field)">
-              <a-input-number
-                v-model:value="condition.value"
-                class="value-number"
-                :placeholder="getValuePlaceholder(condition)"
-              />
-              <a-input-number
-                v-if="condition.operator === 'between'"
-                v-model:value="condition.value2"
-                class="value-number"
-                :placeholder="$t('examples.scaffold.advancedFilter.secondValue')"
-              />
-            </template>
-
-            <template v-else>
-              <a-input
-                v-model:value="condition.value"
-                :placeholder="getValuePlaceholder(condition)"
-              />
-              <a-input
-                v-if="condition.operator === 'between'"
-                v-model:value="condition.value2"
-                :placeholder="$t('examples.scaffold.advancedFilter.secondValue')"
-              />
-            </template>
-          </div>
-
-          <a-button type="text" danger class="remove-btn" @click="removeCondition(condition.id)">
-            <DeleteOutlined />
-          </a-button>
-        </div>
+              <template v-else>
+                <a-input
+                  v-model:value="condition.value"
+                  :placeholder="getValuePlaceholder(condition)"
+                />
+                <a-input
+                  v-if="condition.operator === 'between'"
+                  v-model:value="condition.value2"
+                  :placeholder="$t('examples.scaffold.advancedFilter.secondValue')"
+                />
+              </template></div
+          ></template>
+          <template #conditionRemove>
+            <a-button type="text" danger class="remove-btn" @click="removeCondition(condition.id)">
+              <DeleteOutlined /> </a-button
+          ></template>
+        </SuperForm>
       </div>
 
       <div class="scheme-bar">
@@ -127,16 +117,14 @@
 
       <a-divider />
 
-      <ProTable
-        layout="content"
-        row-key="id"
-        size="small"
-        :columns="columns"
+      <SuperTable
+        :schema="{
+          columns: columns,
+          pagination: false,
+          indexColumn: false,
+          attrs: { tableTools: false, rowKey: 'id', size: 'small' },
+        }"
         :data-source="previewRows"
-        :search="false"
-        :toolbar="false"
-        :pagination="false"
-        :show-index-column="false"
       />
     </div>
 
@@ -147,12 +135,7 @@
       :cancel-text="$t('common.cancel')"
       @ok="saveCurrentScheme"
     >
-      <a-input
-        v-model:value="schemeName"
-        :maxlength="30"
-        :placeholder="$t('examples.scaffold.advancedFilter.schemeNamePlaceholder')"
-        @press-enter="saveCurrentScheme"
-      />
+      <SuperForm @register="registerSchemeForm" />
     </a-modal>
   </div>
 </template>
@@ -160,11 +143,15 @@
 <script setup lang="ts">
 import { DeleteOutlined, PlusOutlined } from '@antdv-next/icons';
 import { message } from 'antdv-next';
+import {
+  SuperForm,
+  useForm,
+  type ExtFormOption,
+  type ExtColumnsItem,
+  SuperTable,
+} from 'superform-antdv';
 import { computed, ref } from 'vue';
 
-import type { ProTableColumn } from '@/types/pro';
-
-import ProTable from '@/components/Pro/ProTable/index.vue';
 import { $t } from '@/locales';
 
 type Relation = 'AND' | 'OR';
@@ -259,13 +246,17 @@ const fieldOptions = computed(() => [
   { label: $t('common.createTime'), value: 'createdAt' },
 ]);
 
-const columns = computed<ProTableColumn[]>(() => [
-  { title: 'ID', dataIndex: 'id', width: 120 },
-  { title: $t('user.username'), dataIndex: 'username', width: 180 },
-  { title: $t('common.status'), dataIndex: 'status', width: 120 },
-  { title: $t('menu.role'), dataIndex: 'role', width: 120 },
-  { title: $t('examples.scaffold.advancedFilter.score'), dataIndex: 'score', width: 120 },
-  { title: $t('common.createTime'), dataIndex: 'createdAt', width: 180 },
+const columns = computed<ExtColumnsItem[]>(() => [
+  { field: 'id', label: () => 'ID', columnProps: { width: 120 } },
+  { field: 'username', label: () => $t('user.username'), columnProps: { width: 180 } },
+  { field: 'status', label: () => $t('common.status'), columnProps: { width: 120 } },
+  { field: 'role', label: () => $t('menu.role'), columnProps: { width: 120 } },
+  {
+    field: 'score',
+    label: () => $t('examples.scaffold.advancedFilter.score'),
+    columnProps: { width: 120 },
+  },
+  { field: 'createdAt', label: () => $t('common.createTime'), columnProps: { width: 180 } },
 ]);
 
 const filteredRows = computed(() => {
@@ -457,7 +448,12 @@ function openSaveModal() {
   saveModalOpen.value = true;
 }
 
-function saveCurrentScheme() {
+async function saveCurrentScheme() {
+  try {
+    await schemeForm.submit();
+  } catch {
+    return;
+  }
   const name = schemeName.value.trim();
   if (!name) {
     message.warning($t('examples.scaffold.advancedFilter.schemeNameRequired'));
@@ -494,9 +490,81 @@ function removeScheme(id: string) {
     activeSchemeId.value = '';
   }
 }
+// 条件切换会改变可编辑值的形态，通过 Schema 组织字段并沿用原有联动和匹配算法。
+function createConditionSchema(condition: Condition): ExtFormOption {
+  return {
+    dataSource: condition,
+    gutter: 8,
+    subItems: [
+      { type: 'Hidden', field: 'id' },
+      { type: 'Hidden', field: 'value2' },
+      {
+        type: 'InfoSlot',
+        span: 1,
+        render: () => String(conditions.value.findIndex((item) => item.id === condition.id) + 1),
+      },
+      {
+        type: 'Select',
+        field: 'field',
+        span: 6,
+        colProps: { xs: 24, md: 6 },
+        options: { source: () => fieldOptions.value },
+        onChange: (_context: unknown, value: FieldKey) => onFieldChange(condition, value),
+      },
+      {
+        type: 'Select',
+        field: 'operator',
+        span: 5,
+        colProps: { xs: 24, md: 5 },
+        options: { source: () => getOperatorOptions(condition.field) },
+        onChange: (_context: unknown, value: Operator) => onOperatorChange(condition, value),
+      },
+      {
+        type: 'InputSlot',
+        field: 'value',
+        span: 10,
+        colProps: { xs: 24, md: 10 },
+        render: 'conditionValue',
+      },
+      { type: 'InfoSlot', span: 2, render: 'conditionRemove' },
+    ],
+  };
+}
+const [registerSchemeForm, schemeForm] = useForm({
+  subSpan: 24,
+  attrs: { layout: 'vertical' },
+  subItems: [
+    {
+      type: 'Input',
+      field: 'name',
+      value: schemeName,
+      label: () => $t('examples.scaffold.advancedFilter.saveScheme'),
+      required: true,
+      rules: { message: $t('examples.scaffold.advancedFilter.schemeNamePlaceholder') },
+      dynamicAttrs: () => ({
+        maxlength: 30,
+        placeholder: $t('examples.scaffold.advancedFilter.schemeNamePlaceholder'),
+        onPressEnter: saveCurrentScheme,
+      }),
+    },
+  ],
+});
 </script>
 
 <style scoped lang="scss">
+.condition-form {
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--color-bg-layout);
+}
+.condition-form :deep(.ant-row) {
+  align-items: center;
+}
+.condition-form :deep(.ant-form-item) {
+  margin-bottom: 0;
+}
+
 .mb-lg {
   margin-bottom: var(--spacing-lg);
 }
@@ -518,16 +586,6 @@ function removeScheme(id: string) {
 
 .condition-empty {
   padding: 24px 0;
-}
-
-.condition-row {
-  display: grid;
-  grid-template-columns: 32px 170px 170px 1fr 36px;
-  gap: 10px;
-  align-items: center;
-  padding: 10px;
-  border-radius: 8px;
-  background: var(--color-bg-layout);
 }
 
 .condition-index {
@@ -559,11 +617,6 @@ function removeScheme(id: string) {
 }
 
 @media (max-width: 992px) {
-  .condition-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
   .condition-index {
     display: none;
   }

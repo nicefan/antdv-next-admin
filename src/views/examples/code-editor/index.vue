@@ -1,16 +1,16 @@
 <template>
   <div class="page-container">
     <div class="card">
-      <h2>{{ $t("examples.codeEditor.title") }}</h2>
+      <h2>{{ $t('examples.codeEditor.title') }}</h2>
       <p class="mb-lg text-secondary">
-        {{ $t("examples.codeEditor.description") }}
+        {{ $t('examples.codeEditor.description') }}
       </p>
 
       <a-row :gutter="[16, 16]">
         <a-col :xs="24" :sm="24" :md="12">
           <div class="editor-card">
             <div class="editor-header">
-              <span class="editor-title">{{ $t("examples.codeEditor.themePreview") }}</span>
+              <span class="editor-title">{{ $t('examples.codeEditor.themePreview') }}</span>
               <a-select
                 v-model:value="selectedTheme"
                 style="width: 140px"
@@ -18,79 +18,158 @@
                 :options="themeOptions"
               />
             </div>
-            <ProCodeEditor
-              v-model="themePreviewContent"
-              language="typescript"
-              :height="250"
-              :theme="selectedTheme"
+            <SuperForm
+              :schema="{
+                dataSource: { content: themePreviewContent },
+                subSpan: 24,
+                attrs: {
+                  onValuesChange: (_changed: unknown, values: { content: string }) =>
+                    (themePreviewContent = values.content),
+                },
+                subItems: [
+                  {
+                    type: 'CodeEditor',
+                    field: 'content',
+                    dynamicAttrs: () => ({
+                      language: 'typescript',
+                      height: 250,
+                      theme: selectedTheme,
+                    }),
+                  },
+                ],
+              }"
             />
           </div>
         </a-col>
 
         <a-col :xs="24" :sm="24" :md="12">
           <div class="editor-card">
-            <div class="editor-title">{{ $t("examples.codeEditor.jsEditor") }}</div>
-            <ProCodeEditor
-              v-model="jsContent"
-              language="javascript"
-              :height="250"
+            <div class="editor-title">{{ $t('examples.codeEditor.jsEditor') }}</div>
+            <SuperForm
+              :schema="{
+                dataSource: { content: jsContent },
+                subSpan: 24,
+                attrs: {
+                  onValuesChange: (_changed: unknown, values: { content: string }) =>
+                    (jsContent = values.content),
+                },
+                subItems: [
+                  {
+                    type: 'CodeEditor',
+                    field: 'content',
+                    dynamicAttrs: () => ({ language: 'javascript', height: 250 }),
+                  },
+                ],
+              }"
             />
           </div>
         </a-col>
 
         <a-col :xs="24" :sm="24" :md="12">
           <div class="editor-card">
-            <div class="editor-title">{{ $t("examples.codeEditor.jsonEditor") }}</div>
-            <ProCodeEditor
-              v-model="jsonContent"
-              language="json"
-              :height="250"
-              :show-toolbar="true"
+            <div class="editor-title">{{ $t('examples.codeEditor.jsonEditor') }}</div>
+            <SuperForm
+              :schema="{
+                dataSource: { content: jsonContent },
+                subSpan: 24,
+                attrs: {
+                  onValuesChange: (_changed: unknown, values: { content: string }) =>
+                    (jsonContent = values.content),
+                },
+                subItems: [
+                  {
+                    type: 'CodeEditor',
+                    field: 'content',
+                    dynamicAttrs: () => ({ language: 'json', height: 250, showToolbar: true }),
+                  },
+                ],
+              }"
             />
           </div>
         </a-col>
 
         <a-col :xs="24" :sm="24" :md="12">
           <div class="editor-card">
-            <div class="editor-title">{{ $t("examples.codeEditor.multiLanguage") }}</div>
-            <ProCodeEditor
-              v-model="multiLangContent"
-              :language="selectedLanguage"
-              :height="250"
-              :show-language-select="true"
-              @language-change="handleLanguageChange"
+            <div class="editor-title">{{ $t('examples.codeEditor.multiLanguage') }}</div>
+            <SuperForm
+              :schema="{
+                dataSource: { content: multiLangContent },
+                subSpan: 24,
+                attrs: {
+                  onValuesChange: (_changed: unknown, values: { content: string }) =>
+                    (multiLangContent = values.content),
+                },
+                subItems: [
+                  {
+                    type: 'CodeEditor',
+                    field: 'content',
+                    dynamicAttrs: () => ({
+                      language: selectedLanguage,
+                      height: 250,
+                      showLanguageSelect: true,
+                      onLanguageChange: handleLanguageChange,
+                    }),
+                  },
+                ],
+              }"
             />
           </div>
         </a-col>
 
         <a-col :xs="24" :sm="24" :md="12">
           <div class="editor-card">
-            <div class="editor-title">{{ $t("examples.codeEditor.readonlyMode") }}</div>
-            <ProCodeEditor
-              v-model="readonlyContent"
-              language="typescript"
-              :height="250"
-              :readonly="true"
+            <div class="editor-title">{{ $t('examples.codeEditor.readonlyMode') }}</div>
+            <SuperForm
+              :schema="{
+                dataSource: { content: readonlyContent },
+                subSpan: 24,
+                attrs: {
+                  onValuesChange: (_changed: unknown, values: { content: string }) =>
+                    (readonlyContent = values.content),
+                },
+                subItems: [
+                  {
+                    type: 'CodeEditor',
+                    field: 'content',
+                    dynamicAttrs: () => ({ language: 'typescript', height: 250, readonly: true }),
+                  },
+                ],
+              }"
             />
           </div>
         </a-col>
 
         <a-col :xs="24" :sm="24" :md="12">
           <div class="editor-card">
-            <div class="editor-title">{{ $t("examples.codeEditor.autoHeight") }}</div>
+            <div class="editor-title">{{ $t('examples.codeEditor.autoHeight') }}</div>
             <div class="auto-height-wrapper">
-              <ProCodeEditor
-                v-model="autoHeightContent"
-                language="markdown"
-                :height="250"
-                :line-numbers="false"
+              <SuperForm
+                :schema="{
+                  dataSource: { content: autoHeightContent },
+                  subSpan: 24,
+                  attrs: {
+                    onValuesChange: (_changed: unknown, values: { content: string }) =>
+                      (autoHeightContent = values.content),
+                  },
+                  subItems: [
+                    {
+                      type: 'CodeEditor',
+                      field: 'content',
+                      dynamicAttrs: () => ({
+                        language: 'markdown',
+                        height: 250,
+                        lineNumbers: false,
+                      }),
+                    },
+                  ],
+                }"
               />
             </div>
           </div>
         </a-col>
       </a-row>
 
-      <a-divider orientation="left">{{ $t("common.preview") }}</a-divider>
+      <a-divider orientation="left">{{ $t('common.preview') }}</a-divider>
       <a-card :title="$t('examples.codeEditor.outputPreview')" size="small">
         <pre class="output-preview">{{ jsonContent }}</pre>
       </a-card>
@@ -99,14 +178,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import type { EditorTheme, SupportedLanguage } from '@/components/Fields/CodeEditor/index.vue';
 
-import type {
-  EditorTheme,
-  SupportedLanguage,
-} from "@/components/Pro/ProCodeEditor/index.vue";
-
-import ProCodeEditor from "@/components/Pro/ProCodeEditor/index.vue";
+import { SuperForm } from 'superform-antdv';
+import { ref } from 'vue';
 
 const jsonContent = ref(`{
   "name": "antdv-next-admin",
@@ -138,25 +213,13 @@ const numbers = [1, 2, 3, 4, 5];
 const doubled = numbers.map(double);
 console.log(doubled);`);
 
-const readonlyContent = ref(`// TypeScript Interface Example
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'user' | 'guest';
-  createdAt: Date;
-}
+const readonlyContent = ref(`// 接口由 OpenAPI 生成，Service 已解包返回值
+import { usersApi } from '@/api/generated/admin/User';
 
-interface ApiResponse<T> {
-  data: T;
-  success: boolean;
-  message: string;
+export async function fetchUser(id: string) {
+  return usersApi.getUserById(id);
 }
-
-async function fetchUser(id: string): Promise<ApiResponse<User>> {
-  const response = await fetch(\`/api/users/\${id}\`);
-  return response.json();
-}`);
+`);
 
 const themePreviewContent = ref(`// TypeScript Theme Preview
 interface ThemeConfig {
@@ -206,25 +269,25 @@ console.log(greeting);
 | Code Folding | ✅ |
 `);
 
-const selectedLanguage = ref<SupportedLanguage>("javascript");
+const selectedLanguage = ref<SupportedLanguage>('javascript');
 const multiLangContent = ref(`// JavaScript code\nconst hello = 'world';\nconsole.log(hello);`);
 
-const selectedTheme = ref<EditorTheme>("auto");
+const selectedTheme = ref<EditorTheme>('auto');
 
 const themeOptions = [
-  { label: "跟随系统", value: "auto" },
-  { label: "亮色", value: "light" },
-  { label: "暗色", value: "dark" },
-  { label: "GitHub", value: "github" },
-  { label: "GitHub Dark", value: "githubDark" },
-  { label: "Dracula", value: "dracula" },
-  { label: "Material", value: "material" },
-  { label: "Material Dark", value: "materialDark" },
-  { label: "Monokai", value: "monokai" },
-  { label: "Nord", value: "nord" },
-  { label: "Tokyo Night", value: "tokyoNight" },
-  { label: "Solarized Light", value: "solarized" },
-  { label: "Solarized Dark", value: "solarizedDark" },
+  { label: '跟随系统', value: 'auto' },
+  { label: '亮色', value: 'light' },
+  { label: '暗色', value: 'dark' },
+  { label: 'GitHub', value: 'github' },
+  { label: 'GitHub Dark', value: 'githubDark' },
+  { label: 'Dracula', value: 'dracula' },
+  { label: 'Material', value: 'material' },
+  { label: 'Material Dark', value: 'materialDark' },
+  { label: 'Monokai', value: 'monokai' },
+  { label: 'Nord', value: 'nord' },
+  { label: 'Tokyo Night', value: 'tokyoNight' },
+  { label: 'Solarized Light', value: 'solarized' },
+  { label: 'Solarized Dark', value: 'solarizedDark' },
 ];
 
 const languageExamples: Record<SupportedLanguage, string> = {
@@ -232,14 +295,14 @@ const languageExamples: Record<SupportedLanguage, string> = {
   javascript: "// JavaScript code\nconst hello = 'world';\nconsole.log(hello);",
   typescript:
     "// TypeScript code\ninterface Config {\n  apiUrl: string;\n}\nconst config: Config = { apiUrl: '/api' };",
-  html: "<!DOCTYPE html>\n<html>\n<head>\n  <title>Hello</title>\n</head>\n<body>\n  <h1>Hello World</h1>\n</body>\n</html>",
-  css: "/* CSS Example */\n.container {\n  display: flex;\n  gap: 16px;\n  padding: 20px;\n}",
-  markdown: "# Heading\n\nParagraph text here.",
-  sql: "-- SQL Example\nSELECT * FROM users WHERE age > 18;",
-  yaml: "name: example\nversion: 1.0\nenvironment: development",
+  html: '<!DOCTYPE html>\n<html>\n<head>\n  <title>Hello</title>\n</head>\n<body>\n  <h1>Hello World</h1>\n</body>\n</html>',
+  css: '/* CSS Example */\n.container {\n  display: flex;\n  gap: 16px;\n  padding: 20px;\n}',
+  markdown: '# Heading\n\nParagraph text here.',
+  sql: '-- SQL Example\nSELECT * FROM users WHERE age > 18;',
+  yaml: 'name: example\nversion: 1.0\nenvironment: development',
   xml: '<?xml version="1.0"?>\n<root>\n  <item>value</item>\n</root>',
   python: "# Python Example\ndef greet(name):\n    return f'Hello, {name}!'",
-  java: "// Java Example\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+  java: '// Java Example\npublic class Main {\n    public static void main(String[] args) {\n    }\n}',
   php: "<?php\n// PHP Example\necho 'Hello World';",
   rust: '// Rust Example\nfn main() {\n    println!("Hello, world!");\n}',
   go: '// Go Example\npackage main\n\nfunc main() {\n    println("Hello")\n}',
@@ -247,7 +310,7 @@ const languageExamples: Record<SupportedLanguage, string> = {
 
 function handleLanguageChange(lang: SupportedLanguage) {
   selectedLanguage.value = lang;
-  multiLangContent.value = languageExamples[lang] || "";
+  multiLangContent.value = languageExamples[lang] || '';
 }
 </script>
 

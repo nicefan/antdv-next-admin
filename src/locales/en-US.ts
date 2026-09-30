@@ -123,7 +123,7 @@ export default {
     colorPicker: 'Color Picker',
     requestAuth: 'Request/Auth Flow',
     rbacFlow: 'RBAC Flow',
-    proTableAdvanced: 'ProTable Advanced',
+    proTableAdvanced: 'SuperTable Advanced',
     complexForm: 'Complex Form',
     uploadSystem: 'Upload System',
     importExport: 'Import/Export Flow',
@@ -285,7 +285,7 @@ export default {
     modulePermissionMeta: 'Roles and users',
     moduleMenuMeta: 'Permission codes',
     moduleSystemMeta: 'Settings and logs',
-    previewSubtitle: 'ProTable + ProForm',
+    previewSubtitle: 'SuperTable + SuperForm',
     previewAddMenu: 'Add menu',
     previewCreateUser: 'Create user',
     permissionCode: 'Permission Code',
@@ -513,7 +513,7 @@ export default {
 
   exampleTable: {
     userList: 'User List',
-    subTitle: 'ProTable Example',
+    subTitle: 'SuperTable Example',
     createUser: 'Create User',
     editUser: 'Edit User',
     deleteSuccess: 'Deleted successfully',
@@ -613,7 +613,7 @@ export default {
   },
 
   exampleForm: {
-    description: 'Advanced ProForm example demonstrating various form controls',
+    description: 'Advanced SuperForm example demonstrating various form controls',
     age: 'Age',
     ageRange: 'Age must be between 1 and 150',
     interests: 'Interests',
@@ -846,7 +846,7 @@ export default {
   },
 
   exampleModal: {
-    title: 'ProModal Demo',
+    title: 'NativeModal Demo',
     description:
       'An enhanced wrapper around antdv-next Modal with drag, fullscreen, edge resize and viewport constraints.',
     openDefault: 'Open Default Modal',
@@ -859,7 +859,7 @@ export default {
     mask: 'Mask',
     maskClosable: 'Click Mask to Close',
     keyboard: 'ESC to Close',
-    modalTitle: 'Draggable / Resizable ProModal',
+    modalTitle: 'Draggable / Resizable NativeModal',
     hint: 'Top-right actions provide fullscreen and close. Drag title to move. Drag edges/corners to resize.',
     contentTitle: 'Feature Demonstration',
     contentDescription:
@@ -930,7 +930,7 @@ export default {
     feature5Desc: 'Built-in Chinese & English with easy locale extension',
     feature6: 'Light / Dark Theme Switching',
     feature6Desc: '6 preset theme colors with auto system preference detection',
-    feature7: 'ProTable / ProForm Components',
+    feature7: 'SuperTable / SuperForm Components',
     feature7Desc: 'Config-driven tables and forms covering common business scenarios',
     feature8: 'Mock Data Development Mode',
     feature8Desc: 'Built-in mock system for parallel frontend and backend development',
@@ -957,6 +957,7 @@ export default {
   },
 
   proTable: {
+    columnSetting: 'Columns',
     total: 'Total {total} items',
     density: 'Table Density',
     checkAll: 'Select All',
@@ -1301,7 +1302,7 @@ export default {
           'Chain type-check + unit + e2e into pipeline, execute automatically before merge.',
       },
       proTableAdvanced: {
-        title: 'ProTable Advanced Example',
+        title: 'SuperTable Advanced Example',
         description:
           'Server-side pagination simulation + batch operations + inline editing + export',
         selectedCount: '{count} items selected',

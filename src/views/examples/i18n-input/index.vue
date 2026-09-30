@@ -8,49 +8,11 @@
 
       <a-divider orientation="left">{{ $t('common.basicUsage') }}</a-divider>
 
-      <a-form :model="formState" layout="vertical">
-        <a-form-item :label="$t('examples.i18nInput.productName')">
-          <I18nInput
-            v-model:value="formState.productName"
-            :placeholder="$t('examples.i18nInput.clickToEdit')"
-            :modal-title="$t('examples.i18nInput.editProductName')"
-          />
-        </a-form-item>
-
-        <a-form-item :label="$t('examples.i18nInput.productDescription')">
-          <I18nInput
-            v-model:value="formState.productDescription"
-            :placeholder="$t('examples.i18nInput.clickToEdit')"
-            :modal-title="$t('examples.i18nInput.editProductDesc')"
-          />
-        </a-form-item>
-
-        <a-divider orientation="left">{{ $t('common.advancedUsage') }}</a-divider>
-
-        <a-form-item :label="$t('examples.i18nInput.stringFormat')">
-          <div class="hint">{{ $t('examples.i18nInput.stringFormatHint') }}</div>
-          <I18nInput
-            v-model:value="formState.stringFormat"
-            :placeholder="$t('examples.i18nInput.clickToEdit')"
-          />
-        </a-form-item>
-
-        <a-form-item :label="$t('examples.i18nInput.currentLocale')">
-          <div class="hint">{{ $t('examples.i18nInput.currentLocaleHint') }}</div>
-          <I18nInput
-            v-model:value="formState.withLocale"
-            locale="ja-JP"
-            :placeholder="$t('examples.i18nInput.clickToEdit')"
-          />
-        </a-form-item>
-
-        <a-form-item :label="$t('examples.i18nInput.emptyValue')">
-          <I18nInput
-            v-model:value="formState.emptyValue"
-            :placeholder="$t('examples.i18nInput.clickToEdit')"
-          />
-        </a-form-item>
-      </a-form>
+      <SuperForm @register="registerEditorForm">
+        <template #formSection2>
+          <a-divider orientation="left">{{ $t('common.advancedUsage') }}</a-divider>
+        </template>
+      </SuperForm>
 
       <a-divider orientation="left">{{ $t('common.preview') }}</a-divider>
 
@@ -83,9 +45,10 @@
 </template>
 
 <script setup lang="ts">
+import { SuperForm, useForm } from 'superform-antdv';
 import { reactive, ref } from 'vue';
 
-import I18nInput from '@/components/I18nInput/index.vue';
+import { $t as translate } from '@/locales';
 
 const formState = reactive({
   productName: {
@@ -117,6 +80,54 @@ const showAsString = ref(false);
 function toggleValueType() {
   showAsString.value = !showAsString.value;
 }
+// 自定义编辑器保留值协议和预览，表单布局交由 SuperForm。
+const [registerEditorForm] = useForm({
+  dataSource: formState,
+  subSpan: 24,
+  attrs: { layout: 'vertical' },
+  subItems: [
+    {
+      type: 'I18nInput',
+      field: 'productName',
+      label: () => translate('examples.i18nInput.productName'),
+      dynamicAttrs: () => ({
+        placeholder: translate('examples.i18nInput.clickToEdit'),
+        modalTitle: translate('examples.i18nInput.editProductName'),
+      }),
+    },
+    {
+      type: 'I18nInput',
+      field: 'productDescription',
+      label: () => translate('examples.i18nInput.productDescription'),
+      dynamicAttrs: () => ({
+        placeholder: translate('examples.i18nInput.clickToEdit'),
+        modalTitle: translate('examples.i18nInput.editProductDesc'),
+      }),
+    },
+    { type: 'InfoSlot', block: true, render: 'formSection2' },
+    {
+      type: 'I18nInput',
+      field: 'stringFormat',
+      label: () => translate('examples.i18nInput.stringFormat'),
+      dynamicAttrs: () => ({ placeholder: translate('examples.i18nInput.clickToEdit') }),
+    },
+    {
+      type: 'I18nInput',
+      field: 'withLocale',
+      label: () => translate('examples.i18nInput.currentLocale'),
+      dynamicAttrs: () => ({
+        locale: 'ja-JP',
+        placeholder: translate('examples.i18nInput.clickToEdit'),
+      }),
+    },
+    {
+      type: 'I18nInput',
+      field: 'emptyValue',
+      label: () => translate('examples.i18nInput.emptyValue'),
+      dynamicAttrs: () => ({ placeholder: translate('examples.i18nInput.clickToEdit') }),
+    },
+  ],
+});
 </script>
 
 <style scoped lang="scss">

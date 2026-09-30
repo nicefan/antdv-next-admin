@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <ProSplitLayout :side-width="200">
+    <SplitLayout :side-width="200">
       <template #side>
         <!-- groups nav -->
         <div class="config-groups-header">
@@ -17,14 +17,25 @@
 
       <template #main>
         <!-- config list -->
-        <ProTable
+        <SuperTable
+          ref="nativeTableRef1"
+          :schema="{
+            slots: { extra: 'extra', bodyCell: 'bodyCell' },
+            columns: columns,
+            apis: { query: loadConfigList },
+            params: nativeQuery1.params,
+            pagination: {},
+            indexColumn: false,
+            title: { title: $t(`config.groups.${selectedGroup}`) }.title,
+            attrs: {
+              onChange: nativeQuery1.onChange,
+              tableTools: undefined,
+              onReload: () => nativeTableRef1?.reload(),
+            },
+          }"
           :key="selectedGroup + refreshKey"
-          :columns="columns"
-          :request="loadConfigList"
-          :search="false"
-          :toolbar="{ title: $t(`config.groups.${selectedGroup}`) }"
         >
-          <template #toolbar-actions>
+          <template #extra>
             <a-button type="primary" @click="handleAdd">
               <PlusOutlined /> {{ $t('config.createConfig') }}
             </a-button>
@@ -71,24 +82,24 @@
               </a-space>
             </template>
           </template>
-        </ProTable>
+        </SuperTable>
       </template>
-    </ProSplitLayout>
+    </SplitLayout>
 
     <!-- add/edit modal -->
-    <a-modal v-model:open="modalVisible" :title="modalTitle" @ok="handleSubmit" :width="520">
-      <a-form :model="form" :label-col="{ span: 6 }" style="margin-top: 16px">
-        <a-form-item :label="$t('config.configName')" required>
-          <a-input v-model:value="form.name" :placeholder="$t('config.placeholders.configName')" />
-        </a-form-item>
-        <a-form-item :label="$t('config.configKey')" required>
-          <a-input
-            v-model:value="form.key"
-            :placeholder="$t('config.placeholders.configKey')"
-            :disabled="!!form.id"
-          />
-        </a-form-item>
-        <a-form-item :label="$t('config.configValue')" required>
+    <a-modal
+      v-model:open="modalVisible"
+      :title="modalTitle"
+      @ok="handleSubmit"
+      :confirm-loading="saving"
+      :closable="!saving"
+      :mask-closable="!saving"
+      :keyboard="!saving"
+      :cancel-button-props="{ disabled: saving }"
+      :width="520"
+    >
+      <SuperForm @register="registerForm" style="margin-top: 16px">
+        <template #configValue>
           <a-switch v-if="form.valueType === 'boolean'" v-model:checked="boolValue" />
           <a-input-number
             v-else-if="form.valueType === 'number'"
@@ -106,46 +117,25 @@
             v-model:value="form.value"
             :placeholder="$t('config.placeholders.configValue')"
           />
-        </a-form-item>
-        <a-form-item :label="$t('config.valueType')">
-          <a-select
-            v-model:value="form.valueType"
-            :disabled="!!form.id"
-            :options="valueTypeOptions"
-          />
-        </a-form-item>
-        <a-form-item :label="$t('config.group')">
-          <a-select v-model:value="form.group" allow-clear :options="groupOptions" />
-        </a-form-item>
-        <a-form-item :label="$t('config.sort')">
-          <a-input-number v-model:value="form.sort" :min="0" style="width: 100%" />
-        </a-form-item>
-        <a-form-item :label="$t('config.description')">
-          <a-textarea
-            v-model:value="form.description"
-            :placeholder="$t('config.placeholders.description')"
-            :rows="2"
-          />
-        </a-form-item>
-      </a-form>
+        </template>
+      </SuperForm>
     </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { SysConfig } from '@/types/config';
-import type { ProTableColumn } from '@/types/pro';
 import type { MenuItemType } from 'antdv-next';
+import type { ExtColumnsItem } from 'superform-antdv';
 
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@antdv-next/icons';
 import { message, Modal } from 'antdv-next';
+import { SuperForm, useForm, SuperTable } from 'superform-antdv';
 import { ref, computed, h } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { getConfigList, createConfig, updateConfig, deleteConfig } from '@/api/config';
-import ProSplitLayout from '@/components/Pro/ProSplitLayout/index.vue';
-import ProTable from '@/components/Pro/ProTable/index.vue';
-
+import { configApi } from '@/api/generated/admin/Config';
+import SplitLayout from '@/components/Layout/SplitLayout/index.vue';
 const { t } = useI18n();
 
 const groups = ref<string[]>(['basic', 'security', 'upload', 'notification']);
@@ -209,67 +199,145 @@ const boolValue = computed({
   },
 });
 
-const columns: ProTableColumn[] = [
-  { title: t('config.configName'), dataIndex: 'name', key: 'name', width: 160 },
-  { title: t('config.configKey'), dataIndex: 'key', key: 'key', width: 200 },
+const saving = ref(false);
+const [registerForm, configForm] = useForm({
+  dataSource: form,
+  subSpan: 24,
+  attrs: { labelCol: { span: 6 } },
+  subItems: [
+    { type: 'Hidden', field: 'id' },
+    { type: 'Hidden', field: 'builtIn' },
+    {
+      type: 'Input',
+      field: 'name',
+      label: () => t('config.configName'),
+      required: true,
+      rules: { message: t('config.requiredFields') },
+    },
+    {
+      type: 'Input',
+      field: 'key',
+      label: () => t('config.configKey'),
+      required: true,
+      rules: { message: t('config.requiredFields') },
+      disabled: () => !!form.value.id,
+    },
+    {
+      type: 'InputSlot',
+      field: 'value',
+      label: () => t('config.configValue'),
+      render: 'configValue',
+      rules: {
+        validator: (_context: unknown, value: unknown) => {
+          if (form.value.valueType === 'boolean') return true;
+          if (value === undefined || value === null || String(value).trim() === '')
+            return new Error(t('config.requiredFields'));
+          if (form.value.valueType === 'number' && !Number.isFinite(Number(value)))
+            return new Error(t('config.requiredFields'));
+          if (form.value.valueType === 'json') {
+            try {
+              JSON.parse(String(value));
+            } catch {
+              return new Error(t('config.placeholders.jsonFormat'));
+            }
+          }
+          return true;
+        },
+      },
+    },
+    {
+      type: 'Select',
+      field: 'valueType',
+      label: () => t('config.valueType'),
+      disabled: () => !!form.value.id,
+      options: { source: () => valueTypeOptions.value },
+    },
+    {
+      type: 'Select',
+      field: 'group',
+      label: () => t('config.group'),
+      options: { source: () => groupOptions.value },
+      attrs: { allowClear: true },
+    },
+    {
+      type: 'InputNumber',
+      field: 'sort',
+      label: () => t('config.sort'),
+      attrs: { min: 0, precision: 0, style: { width: '100%' } },
+    },
+    {
+      type: 'TextArea',
+      field: 'description',
+      label: () => t('config.description'),
+      attrs: { rows: 2 },
+    },
+  ],
+});
+
+const columns: ExtColumnsItem[] = [
+  { field: 'name', label: () => t('config.configName'), columnProps: { key: 'name', width: 160 } },
+  { field: 'key', label: () => t('config.configKey'), columnProps: { key: 'key', width: 200 } },
   {
-    title: t('config.configValue'),
-    dataIndex: 'value',
-    key: 'value',
-    ellipsis: true,
+    field: 'value',
+    label: () => t('config.configValue'),
+    columnProps: { key: 'value', ellipsis: true },
   },
   {
-    title: t('config.valueType'),
-    dataIndex: 'valueType',
-    key: 'valueType',
-    width: 90,
+    field: 'valueType',
+    label: () => t('config.valueType'),
+    columnProps: { key: 'valueType', width: 90 },
   },
   {
-    title: t('config.builtIn'),
-    dataIndex: 'builtIn',
-    key: 'builtIn',
-    width: 90,
+    field: 'builtIn',
+    label: () => t('config.builtIn'),
+    columnProps: { key: 'builtIn', width: 90 },
   },
   {
-    title: t('config.description'),
-    dataIndex: 'description',
-    key: 'description',
-    ellipsis: true,
+    field: 'description',
+    label: () => t('config.description'),
+    columnProps: { key: 'description', ellipsis: true },
   },
   {
-    title: t('common.actions'),
-    dataIndex: 'action',
-    key: 'action',
-    width: 150,
-    fixed: 'right',
+    field: 'action',
+    label: () => t('common.actions'),
+    columnProps: { key: 'action', width: 150, fixed: 'right' },
   },
 ];
 
-const loadConfigList = async (params: Record<string, unknown>) => {
+const loadConfigList = async (params: Record<string, unknown>, config?: RequestConfig) => {
   try {
-    const response = await getConfigList({
-      group: selectedGroup.value,
-      page: params.current as number,
-      pageSize: params.pageSize as number,
-    });
-    if (response.code === 200) {
-      return {
-        data: response.data.list,
-        total: response.data.total,
-        success: true,
-      };
-    }
+    const response = await configApi.getConfigList(
+      {
+        group: selectedGroup.value,
+        page: params.current as number,
+        pageSize: params.pageSize as number,
+      },
+      config,
+    );
+
+    return {
+      records: response.list,
+      total: response.total,
+      current: Number(params.current ?? 1),
+      size: Number(params.pageSize ?? 10),
+    };
   } catch (error: unknown) {
     console.error(t('config.loadConfigFailed'), (error as Error).message);
   }
-  return { data: [], total: 0, success: false };
+  return {
+    records: [],
+    total: 0,
+    current: Number(params.current ?? 1),
+    size: Number(params.pageSize ?? 10),
+  };
 };
 
 // load all configs for group count
 const loadAllConfigs = async () => {
   try {
-    const response = await getConfigList({ page: 1, pageSize: 100 });
-    if (response.code === 200) allConfigs.value = response.data.list;
+    const response = await configApi.getConfigList({ page: 1, pageSize: 100 });
+
+    allConfigs.value = response.list;
   } catch (_error: unknown) {}
 };
 
@@ -297,50 +365,53 @@ const handleDelete = (record: SysConfig) => {
     content: t('config.confirmDeleteContent', { name: record.name }),
     onOk: async () => {
       try {
-        const response = await deleteConfig(record.id);
-        if (response.code === 200) {
-          message.success(t('config.deleteSuccess'));
-          refreshKey.value++;
-          loadAllConfigs();
-        } else {
-          message.error(response.message || t('config.deleteFailed'));
-        }
+        await configApi.deleteConfig(record.id);
+
+        message.success(t('config.deleteSuccess'));
+        refreshKey.value++;
+        loadAllConfigs();
       } catch (_error: unknown) {
-        message.error(t('config.deleteFailed'));
+        // 校验由表单展示，请求错误由统一 Service Hooks 反馈。
       }
     },
   });
 };
 
 const handleSubmit = async () => {
-  if (!form.value.name || !form.value.key) {
-    message.warning(t('config.requiredFields'));
-    return;
-  }
+  if (saving.value) return;
+  saving.value = true;
   try {
+    form.value = await configForm.submit();
+    form.value.value =
+      form.value.valueType === 'boolean' ? String(boolValue.value) : String(form.value.value ?? '');
     if (form.value.id) {
-      const response = await updateConfig(form.value.id, form.value);
-      if (response.code === 200) {
-        message.success(t('config.updateSuccess'));
-        modalVisible.value = false;
-        refreshKey.value++;
-        loadAllConfigs();
-      }
+      await configApi.updateConfig(form.value.id, form.value);
+
+      message.success(t('config.updateSuccess'));
+      modalVisible.value = false;
+      refreshKey.value++;
+      loadAllConfigs();
     } else {
-      const response = await createConfig(form.value);
-      if (response.code === 200) {
-        message.success(t('config.createSuccess'));
-        modalVisible.value = false;
-        refreshKey.value++;
-        loadAllConfigs();
-      } else message.error(response.message || t('config.operateFailed'));
+      await configApi.createConfig(form.value);
+
+      message.success(t('config.createSuccess'));
+      modalVisible.value = false;
+      refreshKey.value++;
+      loadAllConfigs();
     }
-  } catch (_error: unknown) {
-    message.error(t('config.operateFailed'));
+  } catch (error: unknown) {
+    // 校验由表单展示，请求错误由统一 Service Hooks 反馈。
+  } finally {
+    saving.value = false;
   }
 };
 
 loadAllConfigs();
+
+const nativeTableRef1 = ref<{ reload: () => Promise<unknown> }>();
+const nativeQuery1 = useTableParams(() => columns);
+
+import { useTableParams } from '@/composables/useTableParams';
 </script>
 
 <style scoped lang="scss">

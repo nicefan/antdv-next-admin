@@ -25,27 +25,7 @@
           }}</a-button>
         </a-space>
 
-        <a-space wrap>
-          <a-input
-            v-model:value="keyword"
-            style="width: 240px"
-            :placeholder="$t('examples.scaffold.virtualTable.searchPlaceholder')"
-          />
-          <a-select v-model:value="statusFilter" style="width: 150px">
-            <a-select-option value="all">{{
-              $t('examples.scaffold.virtualTable.allStatus')
-            }}</a-select-option>
-            <a-select-option value="active">{{
-              $t('examples.scaffold.virtualTable.statusActive')
-            }}</a-select-option>
-            <a-select-option value="inactive">{{
-              $t('examples.scaffold.virtualTable.statusInactive')
-            }}</a-select-option>
-            <a-select-option value="pending">{{
-              $t('examples.scaffold.virtualTable.statusPending')
-            }}</a-select-option>
-          </a-select>
-        </a-space>
+        <SuperForm @register="registerFilterForm" style="width: 420px; max-width: 100%" />
       </div>
 
       <a-space wrap class="mb-lg">
@@ -58,19 +38,22 @@
         <a-tag>{{ $t('examples.scaffold.virtualTable.renderedRowsTip') }}</a-tag>
       </a-space>
 
-      <ProTable
-        layout="content"
-        row-key="id"
-        size="small"
-        bordered
-        virtual
-        :columns="columns"
+      <SuperTable
+        :schema="{
+          slots: { bodyCell: 'bodyCell' },
+          columns: columns,
+          pagination: false,
+          indexColumn: false,
+          attrs: {
+            tableTools: false,
+            rowKey: 'id',
+            size: 'small',
+            bordered: true,
+            virtual: true,
+            scroll: { y: 520, x: 1200 },
+          },
+        }"
         :data-source="filteredRows"
-        :search="false"
-        :toolbar="false"
-        :pagination="false"
-        :show-index-column="false"
-        :scroll="{ y: 520, x: 1200 }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'status'">
@@ -79,18 +62,18 @@
             </a-tag>
           </template>
         </template>
-      </ProTable>
+      </SuperTable>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { ExtColumnsItem } from 'superform-antdv';
+
 import { message } from 'antdv-next';
+import { SuperForm, useForm, SuperTable } from 'superform-antdv';
 import { computed, onMounted, ref } from 'vue';
 
-import type { ProTableColumn } from '@/types/pro';
-
-import ProTable from '@/components/Pro/ProTable/index.vue';
 import { $t } from '@/locales';
 
 type StatusType = 'active' | 'inactive' | 'pending';
@@ -109,17 +92,37 @@ const keyword = ref('');
 const statusFilter = ref<'all' | StatusType>('all');
 const allRows = ref<DemoRow[]>([]);
 
-const columns = computed<ProTableColumn[]>(() => [
-  { title: $t('examples.scaffold.virtualTable.colId'), dataIndex: 'id', width: 130 },
-  { title: $t('examples.scaffold.virtualTable.colUsername'), dataIndex: 'username', width: 180 },
-  { title: $t('examples.scaffold.virtualTable.colEmail'), dataIndex: 'email', width: 260 },
+const columns = computed<ExtColumnsItem[]>(() => [
   {
-    title: $t('examples.scaffold.virtualTable.colDepartment'),
-    dataIndex: 'department',
-    width: 180,
+    field: 'id',
+    label: () => $t('examples.scaffold.virtualTable.colId'),
+    columnProps: { width: 130 },
   },
-  { title: $t('examples.scaffold.virtualTable.colStatus'), dataIndex: 'status', width: 120 },
-  { title: $t('examples.scaffold.virtualTable.colUpdatedAt'), dataIndex: 'updatedAt', width: 200 },
+  {
+    field: 'username',
+    label: () => $t('examples.scaffold.virtualTable.colUsername'),
+    columnProps: { width: 180 },
+  },
+  {
+    field: 'email',
+    label: () => $t('examples.scaffold.virtualTable.colEmail'),
+    columnProps: { width: 260 },
+  },
+  {
+    field: 'department',
+    label: () => $t('examples.scaffold.virtualTable.colDepartment'),
+    columnProps: { width: 180 },
+  },
+  {
+    field: 'status',
+    label: () => $t('examples.scaffold.virtualTable.colStatus'),
+    columnProps: { width: 120 },
+  },
+  {
+    field: 'updatedAt',
+    label: () => $t('examples.scaffold.virtualTable.colUpdatedAt'),
+    columnProps: { width: 200 },
+  },
 ]);
 
 const filteredRows = computed(() => {
@@ -183,6 +186,29 @@ function getStatusColor(status: StatusType) {
 
 onMounted(() => {
   regenerateRows();
+});
+const [registerFilterForm] = useForm({
+  subSpan: 12,
+  compact: true,
+  subItems: [
+    {
+      type: 'Input',
+      value: keyword,
+      dynamicAttrs: () => ({ placeholder: $t('examples.scaffold.virtualTable.searchPlaceholder') }),
+    },
+    {
+      type: 'Select',
+      value: statusFilter,
+      options: {
+        source: () => [
+          { label: $t('examples.scaffold.virtualTable.allStatus'), value: 'all' },
+          { label: $t('examples.scaffold.virtualTable.statusActive'), value: 'active' },
+          { label: $t('examples.scaffold.virtualTable.statusInactive'), value: 'inactive' },
+          { label: $t('examples.scaffold.virtualTable.statusPending'), value: 'pending' },
+        ],
+      },
+    },
+  ],
 });
 </script>
 

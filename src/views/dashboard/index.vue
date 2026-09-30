@@ -34,7 +34,7 @@
     </section>
 
     <section class="stats-grid">
-      <ProStatCard
+      <StatCard
         v-for="card in statCards"
         :key="card.key"
         :label="card.label"
@@ -47,7 +47,7 @@
 
     <section class="charts-grid">
       <div class="card chart-card">
-        <ProChart
+        <Chart
           :type="'bar'"
           :title="$t('dashboard.salesTrend')"
           :data="salesChartData"
@@ -56,11 +56,11 @@
           <template #extra>
             <a-button type="link" size="small">{{ $t('dashboard.viewMore') }}</a-button>
           </template>
-        </ProChart>
+        </Chart>
       </div>
 
       <div class="card chart-card">
-        <ProChart
+        <Chart
           :type="'donut'"
           :title="$t('dashboard.userDistribution')"
           :data="userDistributionChartData"
@@ -100,13 +100,11 @@ import {
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import avatarImg from '@/assets/images/avatar-256.png';
-import ProStatCard from '@/components/Pro/ProStatCard/index.vue';
+import StatCard from '@/components/Display/StatCard/index.vue';
 import { $t, getLocale } from '@/locales';
 import { useAuthStore } from '@/stores/auth';
 
-const ProChart = defineAsyncComponent(
-  () => import('@/components/Pro/ProChart/index.vue'),
-);
+const Chart = defineAsyncComponent(() => import('@/components/Display/Chart/index.vue'));
 
 const authStore = useAuthStore();
 

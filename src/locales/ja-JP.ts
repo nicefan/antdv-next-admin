@@ -278,7 +278,7 @@ export default {
     modulePermissionMeta: 'ロールとユーザー',
     moduleMenuMeta: '権限コード',
     moduleSystemMeta: '設定とログ',
-    previewSubtitle: 'ProTable + ProForm',
+    previewSubtitle: 'SuperTable + SuperForm',
     previewAddMenu: 'メニュー追加',
     previewCreateUser: 'ユーザー追加',
     permissionCode: '権限コード',
@@ -499,7 +499,7 @@ export default {
   },
   exampleTable: {
     userList: 'ユーザーリスト',
-    subTitle: 'ProTable の例',
+    subTitle: 'SuperTable の例',
     createUser: 'ユーザーの作成',
     editUser: 'ユーザーの編集',
     deleteSuccess: '正常に削除されました',
@@ -594,7 +594,7 @@ export default {
     demoLoadedMessage: 'デモコンテンツが読み込まれました',
   },
   exampleForm: {
-    description: 'さまざまなフォーム コントロールを示す高度な ProForm の例',
+    description: 'さまざまなフォーム コントロールを示す高度な SuperForm の例',
     age: '年',
     ageRange: '年齢は 1 ～ 150 歳である必要があります',
     interests: '興味のあること',
@@ -699,7 +699,7 @@ export default {
     mask: 'マスク',
     maskClosable: 'マスクをクリックして閉じる',
     keyboard: 'ESC で閉じる',
-    modalTitle: 'ドラッグ可能/サイズ変更可能な ProModal',
+    modalTitle: 'ドラッグ可能/サイズ変更可能な NativeModal',
     hint: '右上のアクションでは、全画面表示と閉じることができます。タイトルをドラッグして移動します。サイズを変更するには、端/角をドラッグします。',
     contentTitle: '機能のデモンストレーション',
     contentDescription:
@@ -765,7 +765,7 @@ export default {
     feature5Desc: '簡単なロケール拡張機能を備えた組み込みの中国語と英語',
     feature6: 'ライト/ダークテーマの切り替え',
     feature6Desc: '自動システム設定検出機能を備えた 6 つのプリセットテーマカラー',
-    feature7: 'ProTable / ProForm コンポーネント',
+    feature7: 'SuperTable / SuperForm コンポーネント',
     feature7Desc: '一般的なビジネス シナリオをカバーする構成主導のテーブルとフォーム',
     feature8: 'モックデータ開発モード',
     feature8Desc: 'フロントエンドとバックエンドの並行開発のための組み込みモック システム',
@@ -788,6 +788,7 @@ export default {
     progress: 'ステップ {current} / {total}',
   },
   proTable: {
+    columnSetting: '列設定',
     total: '{total} アイテムの合計',
     density: 'テーブル密度',
     checkAll: 'すべて選択',
@@ -1126,7 +1127,7 @@ export default {
           'タイプチェック + ユニット + e2e をパイプラインにチェーンし、マージ前に自動的に実行します。',
       },
       proTableAdvanced: {
-        title: 'ProTable の高度な例',
+        title: 'SuperTable の高度な例',
         description:
           'サーバーサイドのページネーションシミュレーション + バッチ操作 + インライン編集 + エクスポート',
         selectedCount: '{count} 項目が選択されました',
