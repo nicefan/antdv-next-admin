@@ -29,3 +29,17 @@ export async function deleteDept(id: string) {
   clearDeptCache();
   return result;
 }
+
+
+// 子部门列表复用完整组织缓存，搜索树不会截断列表和父级选项。
+export async function getDeptChildren(params: { parentId?: string | null }) {
+  if (!params.parentId) return [];
+  return (await getDeptList()).filter((dept) => dept.parentId === params.parentId).toSorted((a, b) => a.sort - b.sort);
+}
+export function saveDeptEditor(data: DepartmentInput & { id?: string }) {
+  const payload: DepartmentInput = {
+    name: data.name?.trim(), parentId: data.parentId || null, leader: data.leader,
+    phone: data.phone, email: data.email, sort: data.sort, status: data.status, remark: data.remark,
+  };
+  return data.id ? updateDept(data.id, payload) : createDept(payload);
+}

@@ -2,6 +2,7 @@ import superForm, { registerComponents, configure, enUS, zhCN } from 'superform-
 import { fieldComponents } from 'superform-antdv/components';
 import { defineAsyncComponent } from 'vue';
 
+import ConfigValue from '@/components/Fields/ConfigValue/index.vue';
 import RemoteSelect from '@/components/Fields/RemoteSelect/index.vue';
 import I18nInput from '@/components/I18nInput/index.vue';
 import IconPicker from '@/components/IconPicker/index.vue';
@@ -38,6 +39,7 @@ export function setupSuperForm(): void {
     },
   });
   registerComponents({
+    ConfigValue,
     JsonInput,
     I18nInput,
     IconPicker,

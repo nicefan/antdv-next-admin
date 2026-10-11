@@ -1,6 +1,7 @@
 import type { TableColumnType, TableProps } from 'antdv-next';
 import type { Ref } from 'vue';
 import type { HeaderFilter } from '@/components/Native/Table/types';
+import type ConfigValue from '@/components/Fields/ConfigValue/index.vue';
 import type CodeEditor from '@/components/Fields/CodeEditor/index.vue';
 import type RemoteSelect from '@/components/Fields/RemoteSelect/index.vue';
 import type I18nInput from '@/components/I18nInput/index.vue';
@@ -11,6 +12,7 @@ import 'superform-antdv';
 
 declare module 'superform-antdv' {
   interface CustomFormComponentProps {
+    ConfigValue: InstanceType<typeof ConfigValue>['$props'];
     CodeEditor: InstanceType<typeof CodeEditor>['$props'];
     RemoteSelect: InstanceType<typeof RemoteSelect>['$props'];
     RemoteTreeSelect: InstanceType<typeof RemoteSelect>['$props'];

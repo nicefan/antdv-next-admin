@@ -2,412 +2,231 @@
   <div class="page-container">
     <SplitLayout :side-width="280">
       <template #side>
-        <!-- dept tree -->
         <div class="dept-tree-header">
-          <h3>{{ t('dept.organizationStructure') }}</h3>
-          <a-button type="primary" size="small" @click="handleAdd(null)">
-            <template #icon><PlusOutlined /></template>
-            {{ t('common.add') }}
-          </a-button>
+          <h3>{{ $t('dept.organizationStructure') }}</h3>
+          <SuperButtons :actions="rootAddActions" />
         </div>
         <div class="dept-tree-search">
-          <a-input-search
-            v-model:value="searchText"
-            :placeholder="t('dept.searchDept')"
-            allow-clear
-            @search="loadDeptTree"
-          />
+          <SuperForm @register="registerSearch" />
         </div>
         <div class="dept-tree-body">
-          <a-tree
-            v-if="treeData.length"
-            :tree-data="treeData"
-            :field-names="{ title: 'name', key: 'id', children: 'children' }"
-            :selected-keys="selectedKeys"
-            default-expand-all
-            block-node
-            @select="handleTreeSelect"
-          >
+          <a-tree v-if="treeData.length" :tree-data="treeData" :field-names="{ title: 'name', key: 'id', children: 'children' }" :selected-keys="selectedKeys" default-expand-all block-node @select="handleTreeSelect">
             <template #title="{ name, status }">
               <div class="tree-node">
                 <span class="tree-node-name">{{ name }}</span>
-                <span v-if="status === 'disabled'" class="tree-node-badge">{{
-                  t('dept.disabled')
-                }}</span>
+                <span v-if="status === 'disabled'" class="tree-node-badge">{{ $t('dept.disabled') }}</span>
               </div>
             </template>
           </a-tree>
-          <a-empty v-else :image="null" :description="t('common.noData')" />
+          <a-empty v-else :image="null" :description="$t('common.noData')" />
         </div>
       </template>
-
       <template #main>
-        <!-- dept detail -->
         <template v-if="selectedDept">
           <div class="dept-detail-header">
             <div class="dept-detail-title">
               <h3>{{ selectedDept.name }}</h3>
-              <Status :value="selectedDept.status" :status-map="deptStatusMap" />
+              <Status :value="selectedDept.status" :status-map="statusMap" />
             </div>
-            <a-space>
-              <a-button type="primary" size="small" @click="handleAdd(selectedDept.id)">
-                <template #icon><PlusOutlined /></template>
-                {{ t('dept.addChildDept') }}
-              </a-button>
-              <a-button size="small" @click="handleEdit(selectedDept)">
-                <template #icon><EditOutlined /></template>
-                {{ t('common.edit') }}
-              </a-button>
-              <a-button size="small" danger @click="handleDelete(selectedDept)">
-                <template #icon><DeleteOutlined /></template>
-                {{ t('common.delete') }}
-              </a-button>
-            </a-space>
+            <SuperButtons :actions="headerActions" :effect-data="{ record: selectedDept }" :button-props="{ size: 'small' }" />
           </div>
-          <SuperDetail
-            :schema="{
-              subItems: deptDescColumns,
-              attrs: { column: 2, bordered: true, size: 'middle' },
-            }"
-            :data-source="deptDescData"
-            class="dept-descriptions"
-          />
-
-          <!-- child dept list -->
-          <div class="dept-children">
-            <SuperTable
-              ref="nativeTableRef1"
-              :schema="{
-                slots: { bodyCell: 'bodyCell' },
-                columns: childColumns,
-                apis: { query: loadChildDepts },
-                indexColumn: false,
-                title: {
-                  title: `${t('dept.childDepts')} (${childDepts.length})`,
-                }.title,
-                attrs: {
-                  pagination: false,
-                  filterSortTransform: nativeQuery1.filterSortTransform,
-                  tableTools: undefined,
-                  onReload: () => nativeTableRef1?.reload(),
-                },
-              }"
-              :key="selectedDept.id"
-            >
-              <template #bodyCell="{ column, record }">
-                <template v-if="column.key === 'status'">
-                  <Status :value="record.status" :status-map="deptStatusMap" />
-                </template>
-                <template v-if="column.key === 'action'">
-                  <a-space :size="4">
-                    <a-button type="link" size="small" @click="selectDept(record.id)">{{
-                      t('common.view')
-                    }}</a-button>
-                    <a-button type="link" size="small" @click="handleEdit(record)">{{
-                      t('common.edit')
-                    }}</a-button>
-                  </a-space>
-                </template>
-              </template>
-            </SuperTable>
-          </div>
+          <SuperDetail :schema="detailSchema" :data-source="selectedDept" class="dept-descriptions" />
         </template>
-        <div v-else class="dept-detail-empty">
-          <a-empty :description="t('dept.selectDeptNode')" />
+        <div v-show="selectedDept" class="dept-children">
+          <SuperTable @register="register" />
+        </div>
+        <div v-if="!selectedDept" class="dept-detail-empty">
+          <a-empty :description="$t('dept.selectDeptNode')" />
         </div>
       </template>
     </SplitLayout>
-
-    <!-- add/edit modal -->
-    <a-modal
-      v-model:open="modalVisible"
-      :title="modalTitle"
-      @ok="handleSubmit"
-      :confirm-loading="submitting"
-      :cancel-button-props="{ disabled: submitting }"
-      :closable="!submitting"
-      :mask-closable="!submitting"
-      :keyboard="!submitting"
-      :width="520"
-    >
-      <SuperForm @register="registerForm" style="margin-top: 16px" />
-    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Department } from '@/types/dept';
+import type { DepartmentInput } from '@/api/generated/admin/data-contracts';
 import type { StatusMap } from '@/types/display';
-import type { ExtColumnsItem } from 'superform-antdv';
-
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@antdv-next/icons';
-import { message, Modal } from 'antdv-next';
-import { SuperForm, SuperDetail, useForm, SuperTable } from 'superform-antdv';
-import { ref, computed } from 'vue';
-import { useI18n } from 'vue-i18n';
-
-import { getDeptTree, getDeptList, createDept, updateDept, deleteDept } from '@/api/facade/dept';
+import type { ExtColumnsItem, ExtDescriptionsOption, ButtonItem } from 'superform-antdv';
+import { message } from 'antdv-next';
+import { SuperForm, SuperDetail, SuperTable, SuperButtons, useForm, useTable } from 'superform-antdv';
+import { ref, computed, h, onMounted } from 'vue';
+import { getDeptTree, getDeptList, getDeptChildren, saveDeptEditor, deleteDept } from '@/api/facade/dept';
 import Status from '@/components/Display/Status/index.vue';
 import SplitLayout from '@/components/Layout/SplitLayout/index.vue';
-const { t } = useI18n();
-
-const deptStatusMap = computed<StatusMap>(() => ({
-  enabled: { text: t('dept.enabled'), color: '#52c41a' },
-  disabled: { text: t('dept.disabled'), color: '#bfbfbf' },
-}));
-
+import { $t } from '@/locales';
+const statusOptions = [
+  { label: $t('dept.enabled'), value: 'enabled' },
+  { label: $t('dept.disabled'), value: 'disabled' }
+];
+const statusMap: StatusMap = {
+  enabled: { text: $t('dept.enabled'), color: '#52c41a' },
+  disabled: { text: $t('dept.disabled'), color: '#bfbfbf' }
+};
 const searchText = ref('');
 const treeData = ref<Department[]>([]);
 const flatList = ref<Department[]>([]);
 const selectedKeys = ref<string[]>([]);
-
-const selectedDept = computed(() => {
-  if (!selectedKeys.value.length) return null;
-  return flatList.value.find((d) => d.id === selectedKeys.value[0]) || null;
-});
-
-const childDepts = computed(() => {
-  if (!selectedDept.value) return [];
-  return flatList.value
-    .filter((d) => d.parentId === selectedDept.value!.id)
-    .toSorted((a, b) => a.sort - b.sort);
-});
-
-// 上级使用完整部门数据，并排除自身及子孙节点，避免搜索截断选项或形成循环。
-const parentTreeData = computed(() => {
+const selectedDept = computed(() => flatList.value.find((dept) => dept.id === selectedKeys.value[0]) || null);
+const selectedId = computed(() => selectedDept.value?.id || null);
+const childCount = computed(() => flatList.value.filter((dept) => dept.parentId === selectedId.value).length);
+async function loadDeptTree() {
+  const [tree, list] = await Promise.all([getDeptTree({ name: searchText.value.trim() || undefined }), getDeptList()]);
+  treeData.value = tree;
+  flatList.value = list;
+  if (!list.some((dept) => dept.id === selectedKeys.value[0])) selectedKeys.value = tree[0] ? [tree[0].id] : [];
+}
+function handleTreeSelect(keys: string[]) { if (keys.length) selectedKeys.value = keys;
+}// 父级选项排除当前部门及其子孙节点，避免移动部门时形成循环。
+function getParentOptions(id?: string) {
   const excluded = new Set<string>();
-  function excludeBranch(id: string): void {
-    if (excluded.has(id)) return;
-    excluded.add(id);
-    flatList.value.filter((dept) => dept.parentId === id).forEach((dept) => excludeBranch(dept.id));
+  function excludeBranch(key: string) {
+    if (excluded.has(key)) return;
+    excluded.add(key);
+    flatList.value.filter((dept) => dept.parentId === key).forEach((dept) => excludeBranch(dept.id));
   }
-  if (form.value.id) excludeBranch(form.value.id);
-  const nodes = new Map<string, Department>(
-    flatList.value
-      .filter((dept) => !excluded.has(dept.id))
-      .map((dept) => [dept.id, { ...dept, children: [] }]),
-  );
+  if (id) excludeBranch(id);
+  const nodes = new Map<string,
+  Department>(flatList.value.filter((dept) => !excluded.has(dept.id)).map((dept) => [dept.id, { ...dept, children: [] }]));
   const roots: Department[] = [];
   for (const node of nodes.values()) {
     const parent = node.parentId ? nodes.get(node.parentId) : undefined;
-    if (parent) parent.children!.push(node);
+    if (parent) parent.children?.push(node);
     else roots.push(node);
   }
   return roots;
-});
-
-// modal
-const modalVisible = ref(false);
-const modalTitle = computed(() => (form.value.id ? t('dept.editDept') : t('dept.createDept')));
-const form = ref<Partial<Department>>({
-  name: '',
-  parentId: null,
-  leader: '',
-  phone: '',
-  email: '',
-  sort: 0,
-  status: 'enabled',
-  remark: '',
-});
-
-const submitting = ref(false);
-const [registerForm, deptForm] = useForm({
-  dataSource: form,
+}
+const [registerSearch] = useForm({
   subSpan: 24,
-  attrs: { labelCol: { span: 6 } },
   subItems: [
-    { type: 'Hidden', field: 'id' },
     {
-      type: 'TreeSelect',
-      field: 'parentId',
-      label: () => t('dept.parentDept'),
-      dynamicAttrs: () => ({
-        treeData: parentTreeData.value,
-        fieldNames: { label: 'name', value: 'id', children: 'children' },
-        placeholder: t('dept.noneTopLevelDept'),
-        allowClear: true,
-        treeDefaultExpandAll: true,
-      }),
-    },
-    {
-      type: 'Input',
+      type: 'InputSearch',
       field: 'name',
-      label: () => t('dept.deptName'),
-      required: true,
-      rules: { message: t('dept.pleaseEnterDeptName') },
-      dynamicAttrs: () => ({ placeholder: t('dept.pleaseEnterDeptName') }),
-    },
-    { type: 'Input', field: 'leader', label: () => t('dept.leader') },
-    { type: 'Input', field: 'phone', label: () => t('dept.phone') },
-    { type: 'Input', field: 'email', label: () => t('dept.email'), rules: { type: 'email' } },
-    {
-      type: 'InputNumber',
-      field: 'sort',
-      label: () => t('dept.sort'),
-      attrs: { min: 0, precision: 0, style: { width: '100%' } },
-    },
-    {
-      type: 'RadioGroup',
-      field: 'status',
-      label: () => t('dept.status'),
-      options: {
-        source: () => [
-          { label: t('dept.enabled'), value: 'enabled' },
-          { label: t('dept.disabled'), value: 'disabled' },
-        ],
-      },
-    },
-    { type: 'TextArea', field: 'remark', label: () => t('dept.remark'), attrs: { rows: 3 } },
-  ],
-});
-
-const childColumns = computed<ExtColumnsItem[]>(() => [
-  { field: 'name', label: () => t('dept.deptName'), columnProps: { key: 'name' } },
-  { field: 'leader', label: () => t('dept.leader'), columnProps: { key: 'leader', width: 100 } },
-  { field: 'sort', label: () => t('dept.sort'), columnProps: { key: 'sort', width: 70 } },
-  { field: 'status', label: () => t('dept.status'), columnProps: { key: 'status', width: 80 } },
-  { field: 'action', label: () => t('common.actions'), columnProps: { key: 'action', width: 120 } },
-]);
-
-const deptDescColumns = computed<ExtColumnsItem[]>(() => [
-  { field: 'name', label: () => t('dept.deptName') },
-  { field: 'parentName', label: () => t('dept.parentDept') },
-  { field: 'leader', label: () => t('dept.leader') },
-  { field: 'phone', label: () => t('dept.phone') },
-  { field: 'email', label: () => t('dept.email') },
-  { field: 'sort', label: () => t('dept.sort') },
-  { field: 'createTime', label: () => t('dept.createTime') },
-  { field: 'updateTime', label: () => t('dept.updateTime') },
-  { field: 'remark', label: () => t('dept.remark'), span: 2 },
-]);
-
-const deptDescData = computed(() => {
-  if (!selectedDept.value) return {};
-  return {
-    ...selectedDept.value,
-    parentName: getParentName(selectedDept.value.parentId),
-  };
-});
-
-const getParentName = (parentId: string | null) => {
-  if (!parentId) return t('dept.noneTopLevel');
-  return flatList.value.find((d) => d.id === parentId)?.name || '-';
-};
-
-const selectDept = (id: string) => {
-  selectedKeys.value = [id];
-};
-
-const loadChildDepts = async (params: Record<string, unknown>) => {
-  return {
-    records: childDepts.value,
-    total: childDepts.value.length,
-    current: Number(params.current ?? 1),
-    size: Number(params.pageSize ?? 10),
-  };
-};
-
-const loadDeptTree = async () => {
-  try {
-    const params: Record<string, unknown> = {};
-    if (searchText.value) params.name = searchText.value;
-    const [treeRes, listRes] = await Promise.all([getDeptTree(params), getDeptList()]);
-
-    treeData.value = treeRes;
-
-    flatList.value = listRes;
-
-    if (!selectedKeys.value.length && treeData.value.length) {
-      selectedKeys.value = [treeData.value[0].id];
-    }
-    await nativeTableRef1.value?.reload();
-  } catch (error: unknown) {
-    console.error(t('dept.loadDataFailed'), (error as Error).message);
-  }
-};
-
-const handleTreeSelect = (keys: string[]) => {
-  if (keys.length) selectedKeys.value = keys;
-};
-
-const handleAdd = (parentId: string | null) => {
-  form.value = {
-    name: '',
-    parentId,
-    leader: '',
-    phone: '',
-    email: '',
-    sort: 0,
-    status: 'enabled',
-    remark: '',
-  };
-  modalVisible.value = true;
-};
-
-const handleEdit = (dept: Department) => {
-  form.value = { ...dept };
-  modalVisible.value = true;
-};
-
-const handleDelete = (dept: Department) => {
-  const hasChildren = flatList.value.some((d) => d.parentId === dept.id);
-  if (hasChildren) {
-    message.warning(t('dept.hasChildrenWarning'));
-    return;
-  }
-  Modal.confirm({
-    title: t('dept.confirmDelete'),
-    content: t('dept.confirmDeleteContent', { name: dept.name }),
-    onOk: async () => {
-      try {
-        await deleteDept(dept.id);
-
-        message.success(t('dept.deleteSuccess'));
-        selectedKeys.value = [];
-        loadDeptTree();
-      } catch (_error: unknown) {
-        // 校验由表单展示，请求错误由统一 Service Hooks 反馈。
+      value: searchText,
+      attrs: {
+        placeholder: $t('dept.searchDept'),
+        allowClear: true,
+        onSearch: () => { void loadDeptTree().catch(console.error);
+        }
       }
     },
-  });
-};
-
-const handleSubmit = async () => {
-  if (submitting.value) return;
-  submitting.value = true;
-  try {
-    const data: Partial<Department> = await deptForm.submit();
-    // 清空上级表示顶级部门，只提交可编辑字段，避免把 children 等展示数据传回接口。
-    const payload: Partial<Department> = {
-      name: data.name?.trim(),
-      parentId: data.parentId || null,
-      leader: data.leader,
-      phone: data.phone,
-      email: data.email,
-      sort: data.sort,
-      status: data.status,
-      remark: data.remark,
-    };
-    if (data.id) await updateDept(data.id, payload);
-    else await createDept(payload);
-
-    message.success(t(data.id ? 'dept.updateSuccess' : 'dept.createSuccess'));
-    modalVisible.value = false;
-    await loadDeptTree();
-  } catch (error: unknown) {
-    // 校验由表单展示，请求错误由统一 Service Hooks 反馈。
-  } finally {
-    submitting.value = false;
-  }
-};
-
-// init
-loadDeptTree();
-
-const nativeTableRef1 = ref<{ reload: () => Promise<unknown> }>();
-const nativeQuery1 = useTableParams(() => childColumns.value);
-
-import { useTableParams } from '@/composables/useTableParams';
+  ]
+});
+const columns: ExtColumnsItem[] = [
+  { type: 'Hidden', field: 'id' },
+  { type: 'Input', field: 'name', label: $t('dept.deptName'), required: true },
+  {
+    type: 'TreeSelect',
+    field: 'parentId',
+    label: $t('dept.parentDept'),
+    initialValue: null,
+    exclude: ['table'],
+    options: {
+      source: ({ formData }) => getParentOptions(formData?.id),
+      fieldNames: { label: 'name', value: 'id', children: 'children' }
+    },
+    attrs: { placeholder: $t('dept.noneTopLevelDept'), allowClear: true, treeDefaultExpandAll: true },
+    viewRender: ({ text }) => text ? flatList.value.find((dept) => dept.id === text)?.name || '-' : $t('dept.noneTopLevel')
+  },
+  { type: 'Input', field: 'leader', label: $t('dept.leader'), columnProps: { width: 100 } },
+  { type: 'Input', field: 'phone', label: $t('dept.phone'), exclude: ['table'] },
+  {
+    type: 'Input',
+    field: 'email',
+    label: $t('dept.email'),
+    rules: { type: 'email' },
+    exclude: ['table']
+  },
+  {
+    type: 'InputNumber',
+    field: 'sort',
+    label: $t('dept.sort'),
+    initialValue: 0,
+    attrs: { min: 0, precision: 0 },
+    columnProps: { width: 70 }
+  },
+  {
+    type: 'RadioGroup',
+    field: 'status',
+    label: $t('dept.status'),
+    initialValue: 'enabled',
+    options: { source: statusOptions },
+    viewRender: ({ text }) => h(Status, { value: text, statusMap }),
+    columnProps: { width: 90 }
+  },
+  { field: 'createTime', label: $t('dept.createTime'), exclude: ['table', 'form'] },
+  { field: 'updateTime', label: $t('dept.updateTime'), exclude: ['table', 'form'] },
+  {
+    type: 'TextArea',
+    field: 'remark',
+    label: $t('dept.remark'),
+    attrs: { rows: 3 },
+    span: 24,
+    exclude: ['table']
+  },
+];
+const detailSchema: ExtDescriptionsOption = { subItems: columns, attrs: { column: 2, bordered: true, size: 'middle' } };
+function refreshOrganization() { void loadDeptTree().catch(console.error);
+}
+async function save(data: DepartmentInput & { id?: string }) {
+  const result = await saveDeptEditor(data);
+  message.success($t(data.id ? 'dept.updateSuccess' : 'dept.createSuccess'));
+  refreshOrganization();
+  return result;
+}
+const [register, table] = useTable({
+  title: () => `${$t('dept.childDepts')} (${childCount.value})`,
+  columns,
+  indexColumn: false,
+  params: { parentId: selectedId },
+  attrs: { rowKey: 'id', onReload: () => table.reload(), pagination: false },
+  apis: {
+    query: getDeptChildren,
+    save,
+    update: save,
+    delete: async (keys: string[]) => {
+      if (flatList.value.some((dept) => dept.parentId && keys.includes(dept.parentId))) throw new Error($t('dept.hasChildrenWarning'));
+      await Promise.all(keys.map((id) => deleteDept(id)));
+      message.success($t('dept.deleteSuccess'));
+      refreshOrganization();
+    }
+  },
+  rowButtons: {
+    actions: [
+      { label: $t('common.view'), onClick: ({ record }) => { selectedKeys.value = [record.id];
+      } },
+      'edit',
+    ]
+  },
+  rowEditor: {
+    addMode: 'modal',
+    editMode: 'modal',
+    modalProps: { width: 520 },
+    form: { subSpan: 24, attrs: { labelCol: { span: 6 } } }
+  },
+});
+const rootAddActions: ButtonItem[] = [{ label: $t('common.add'), onClick: () => table.add({ resetData: { parentId: null } }) }];
+const headerActions: ButtonItem[] = [
+  {
+    name: 'add',
+    label: $t('dept.addChildDept'),
+    onClick: ({ record }) => table.add({ resetData: { parentId: record.id } })
+  },
+  { name: 'edit', onClick: ({ record }) => table.edit({ record }) },
+  {
+    name: 'delete',
+    confirmText: ({ record }) => $t('dept.confirmDeleteContent', { name: record.name }),
+    onClick: async ({ record }) => {
+      if (flatList.value.some((dept) => dept.parentId === record.id)) { message.warning($t('dept.hasChildrenWarning'));
+      return false;
+      }
+      await table.setSelectedRows([record]);
+      return table.delete();
+    }
+  },
+];
+onMounted(() => { void loadDeptTree().catch(console.error);
+});
 </script>
 
 <style scoped lang="scss">

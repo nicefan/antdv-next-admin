@@ -4,11 +4,12 @@
 
 | 场景 | 当前入口 |
 | --- | --- |
-| 登录、密码修改、系统配置、字典、部门编辑 | SuperForm / useForm |
-| 用户、角色、权限和表格示例编辑 | SuperForm + NativeModal |
+| 登录、密码修改、部门树搜索 | SuperForm / useForm |
+| 用户、角色、权限、配置、字典数据、部门和表格示例编辑 | SuperTable rowEditor，默认复用 columns |
+| 字典类型编辑、用户 CSV 导入 | useModalForm |
 | 业务列表和本地列表示例 | SuperTable 原生 Schema |
 | 部门、主从表示例详情 | SuperDetail，必要时加独立 DetailPanel |
-| JSON、多语言、图标、代码编辑器、远程选项 | 统一注册的自定义 field |
+| JSON、多语言、图标、代码编辑器、远程选项、配置值 | 统一注册的自定义 field |
 | 上传及失败重试 | SuperForm Upload 的提交上传模式 |
 | 图表、统计卡片、分栏、分步交互 | Display 与 Layout 独立组件 |
 

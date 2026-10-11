@@ -1,88 +1,12 @@
 <template>
   <div class="page-container">
     <div class="log-container">
-      <a-tabs v-model:activeKey="activeTab" @change="handleTabChange">
-        <a-tab-pane key="operation" :tab="t('log.operationLog')">
-          <SuperTable
-            ref="operationTableRef"
-            :schema="{
-              slots: { extra: 'extra', bodyCell: 'bodyCell' },
-              columns: operationColumns,
-              apis: { query: loadOperationLogs },
-              searchForm: { subItems: operationSearchFormItems, limit: 2 },
-              indexColumn: false,
-              title: { title: t('log.operationLog') }.title,
-              attrs: {
-                pagination: {},
-                filterSortTransform: nativeQuery1.filterSortTransform,
-                tableTools: undefined,
-                onReload: () => operationTableRef?.reload(),
-              },
-            }"
-            :key="'operation-' + operationRefreshKey"
-          >
-            <template #extra>
-              <a-button danger @click="handleClearOperationLog">
-                <DeleteOutlined /> {{ t('log.clearLog') }}
-              </a-button>
-            </template>
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'action'">
-                <a-tag :color="actionColorMap[record.action] || 'default'">
-                  {{ t(`log.actionTypes.${record.action}`) || record.action }}
-                </a-tag>
-              </template>
-              <template v-if="column.key === 'status'">
-                <Status :value="record.status" :status-map="logStatusMap" />
-              </template>
-              <template v-if="column.key === 'duration'">
-                <span
-                  :style="{
-                    color:
-                      record.duration > 300
-                        ? '#ff4d4f'
-                        : record.duration > 100
-                          ? '#faad14'
-                          : '#52c41a',
-                  }"
-                >
-                  {{ record.duration }}ms
-                </span>
-              </template>
-            </template>
-          </SuperTable>
+      <a-tabs v-model:activeKey="activeTab">
+        <a-tab-pane key="operation" :tab="$t('log.operationLog')">
+          <SuperTable @register="registerOperation" />
         </a-tab-pane>
-
-        <a-tab-pane key="login" :tab="t('log.loginLog')">
-          <SuperTable
-            ref="loginTableRef"
-            :schema="{
-              slots: { extra: 'extra', bodyCell: 'bodyCell' },
-              columns: loginColumns,
-              apis: { query: loadLoginLogs },
-              searchForm: { subItems: loginSearchFormItems, limit: 2 },
-              indexColumn: false,
-              title: { title: t('log.loginLog') }.title,
-              attrs: {
-                pagination: {},
-                filterSortTransform: nativeQuery2.filterSortTransform,
-                tableTools: undefined,
-                onReload: () => loginTableRef?.reload(),
-              },
-            }"
-            :key="'login-' + loginRefreshKey"
-          >
-            <template #extra>
-              <a-button danger @click="handleClearLoginLog">
-                <DeleteOutlined /> {{ t('log.clearLog') }}
-              </a-button>
-            </template>
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'status'">
-                <Status :value="record.status" :status-map="logStatusMap" />
-              </template>
-            </template>
-          </SuperTable>
+        <a-tab-pane key="login" :tab="$t('log.loginLog')">
+          <SuperTable @register="registerLogin" />
         </a-tab-pane>
       </a-tabs>
     </div>
@@ -90,29 +14,29 @@
 </template>
 
 <script setup lang="ts">
+import type { ExtColumnsItem } from 'superform-antdv';
 import type { StatusMap } from '@/types/display';
-import type { UniOption, ExtColumnsItem } from 'superform-antdv';
-
-import { DeleteOutlined } from '@antdv-next/icons';
-import { message, Modal } from 'antdv-next';
-import { SuperTable } from 'superform-antdv';
-import { ref, computed } from 'vue';
-import { useI18n } from 'vue-i18n';
-
+import { Tag, message } from 'antdv-next';
+import { SuperTable, useTable } from 'superform-antdv';
+import { h, ref } from 'vue';
 import { logApi } from '@/api/generated/admin/Log';
 import Status from '@/components/Display/Status/index.vue';
-const { t } = useI18n();
-
-const logStatusMap = computed<StatusMap>(() => ({
-  success: { text: t('log.success'), color: '#52c41a' },
-  fail: { text: t('log.fail'), color: '#ff4d4f' },
-}));
-
+import { $t } from '@/locales';
 const activeTab = ref('operation');
-const operationRefreshKey = ref(0);
-const loginRefreshKey = ref(0);
-
-const actionColorMap: Record<string, string> = {
+const statusMap: StatusMap = {
+  success: { text: $t('log.success'), color: '#52c41a' },
+  fail: { text: $t('log.fail'), color: '#ff4d4f' }
+};
+const statusOptions = ['success', 'fail'].map((value) => ({ label: $t(`log.${value}`), value }));
+const statusColumn: ExtColumnsItem = {
+  type: 'Select',
+  field: 'status',
+  label: $t('common.status'),
+  options: { source: statusOptions },
+  viewRender: ({ text }) => h(Status, { value: text, statusMap }),
+  columnProps: { width: 80 }
+};
+const actionColors: Record<string, string> = {
   login: 'blue',
   logout: 'default',
   create: 'green',
@@ -120,243 +44,128 @@ const actionColorMap: Record<string, string> = {
   delete: 'red',
   export: 'purple',
   import: 'cyan',
-  other: 'default',
+  other: 'default'
 };
-
-// operation log search form items
-const operationSearchFormItems = computed<UniOption[]>(() => [
-  { type: 'Input', field: 'username', label: () => t('log.operationUser') },
+const actionOptions = Object.keys(actionColors).map((value) => ({ label: $t(`log.actionTypes.${value}`), value }));
+const moduleOptions = [
+  'userManagement',
+  'roleManagement',
+  'menuManagement',
+  'dictionary',
+  'systemLogin',
+  'profile',
+  'dashboard'
+].map((value) => ({ label: $t(`log.modules.${value}`), value }));
+const operationColumns: ExtColumnsItem[] = [
   {
-    type: 'Select',
-    field: 'module',
-    label: () => t('log.operationModule'),
-    options: {
-      source: () => [
-        { label: t('log.modules.userManagement'), value: 'userManagement' },
-        { label: t('log.modules.roleManagement'), value: 'roleManagement' },
-        { label: t('log.modules.menuManagement'), value: 'menuManagement' },
-        { label: t('log.modules.dictionary'), value: 'dictionary' },
-        { label: t('log.modules.systemLogin'), value: 'systemLogin' },
-        { label: t('log.modules.profile'), value: 'profile' },
-        { label: t('log.modules.dashboard'), value: 'dashboard' },
-      ],
-    },
-  },
-  {
-    type: 'Select',
-    field: 'action',
-    label: () => t('log.operationType'),
-    options: {
-      source: () => [
-        { label: t('log.actionTypes.login'), value: 'login' },
-        { label: t('log.actionTypes.logout'), value: 'logout' },
-        { label: t('log.actionTypes.create'), value: 'create' },
-        { label: t('log.actionTypes.update'), value: 'update' },
-        { label: t('log.actionTypes.delete'), value: 'delete' },
-        { label: t('log.actionTypes.export'), value: 'export' },
-      ],
-    },
-  },
-  {
-    type: 'Select',
-    field: 'status',
-    label: () => t('common.status'),
-    options: {
-      source: () => [
-        { label: t('log.success'), value: 'success' },
-        { label: t('log.fail'), value: 'fail' },
-      ],
-    },
-  },
-]);
-
-// operation log columns
-const operationColumns = computed<ExtColumnsItem[]>(() => [
-  {
+    type: 'Input',
     field: 'username',
-    label: () => t('log.operationUser'),
-    columnProps: { key: 'username', width: 100 },
+    label: $t('log.operationUser'),
+    columnProps: { width: 100 }
   },
   {
+    type: 'Select',
     field: 'module',
-    label: () => t('log.operationModule'),
-    columnProps: { key: 'module', width: 110 },
+    label: $t('log.operationModule'),
+    options: { source: moduleOptions },
+    tagViewer: false,
+    columnProps: { width: 110 }
   },
   {
+    type: 'Select',
     field: 'action',
-    label: () => t('log.operationType'),
-    columnProps: { key: 'action', width: 90 },
+    label: $t('log.operationType'),
+    options: { source: actionOptions },
+    columnProps: { width: 90 },
+    viewRender: ({ text }) => h(Tag, { color: actionColors[text] }, () => actionOptions.find((option) => option.value === text)?.label || text)
   },
   {
     field: 'description',
-    label: () => t('log.operationDescription'),
-    columnProps: { key: 'description', ellipsis: true },
+    label: $t('log.operationDescription'),
+    columnProps: { ellipsis: true }
   },
-  {
-    field: 'method',
-    label: () => t('log.requestMethod'),
-    columnProps: { key: 'method', width: 90 },
-  },
-  { field: 'ip', label: () => t('log.ipAddress'), columnProps: { key: 'ip', width: 130 } },
-  { field: 'status', label: () => t('common.status'), columnProps: { key: 'status', width: 80 } },
+  { field: 'method', label: $t('log.requestMethod'), columnProps: { width: 90 } },
+  { field: 'ip', label: $t('log.ipAddress'), columnProps: { width: 130 } },
+  statusColumn,
   {
     field: 'duration',
-    label: () => t('log.duration'),
-    columnProps: { key: 'duration', width: 80 },
+    label: $t('log.duration'),
+    columnProps: { width: 80 },
+    viewRender: ({ text }) => h('span', { style: { color: text > 300 ? '#ff4d4f' : text > 100 ? '#faad14' : '#52c41a' } }, `${text}ms`)
   },
-  {
-    field: 'createTime',
-    label: () => t('log.operationTime'),
-    columnProps: { key: 'createTime', width: 170 },
-  },
-]);
-
-// login log search form items
-const loginSearchFormItems = computed<UniOption[]>(() => [
-  { type: 'Input', field: 'username', label: () => t('log.username') },
-  { type: 'Input', field: 'ip', label: () => t('log.ipAddress') },
-  {
-    type: 'Select',
-    field: 'status',
-    label: () => t('common.status'),
-    options: {
-      source: () => [
-        { label: t('log.success'), value: 'success' },
-        { label: t('log.fail'), value: 'fail' },
-      ],
-    },
-  },
-]);
-
-// login log columns
-const loginColumns = computed<ExtColumnsItem[]>(() => [
-  {
-    field: 'username',
-    label: () => t('log.username'),
-    columnProps: { key: 'username', width: 120 },
-  },
-  { field: 'ip', label: () => t('log.ipAddress'), columnProps: { key: 'ip', width: 140 } },
-  { field: 'browser', label: () => t('log.browser'), columnProps: { key: 'browser', width: 130 } },
-  { field: 'os', label: () => t('log.os'), columnProps: { key: 'os', width: 130 } },
-  { field: 'status', label: () => t('common.status'), columnProps: { key: 'status', width: 80 } },
-  {
-    field: 'message',
-    label: () => t('log.message'),
-    columnProps: { key: 'message', ellipsis: true },
-  },
-  {
-    field: 'createTime',
-    label: () => t('log.loginTime'),
-    columnProps: { key: 'createTime', width: 170 },
-  },
-]);
-
-const handleTabChange = () => {};
-
-const loadOperationLogs = async (params: Record<string, unknown>, config?: RequestConfig) => {
-  try {
-    const response = await logApi.getOperationLogList(
-      {
-        username: params.username as string,
-        module: params.module as string,
-        action: params.action as string,
-        status: params.status as string,
-        page: params.current as number,
-        pageSize: params.pageSize as number,
-      },
-      config,
-    );
-
-    return {
+  { field: 'createTime', label: $t('log.operationTime'), columnProps: { width: 170 } },
+];
+const loginColumns: ExtColumnsItem[] = [
+  { type: 'Input', field: 'username', label: $t('log.username'), columnProps: { width: 120 } },
+  { type: 'Input', field: 'ip', label: $t('log.ipAddress'), columnProps: { width: 140 } },
+  { field: 'browser', label: $t('log.browser'), columnProps: { width: 130 } },
+  { field: 'os', label: $t('log.os'), columnProps: { width: 130 } },
+  { ...statusColumn },
+  { field: 'message', label: $t('log.message'), columnProps: { ellipsis: true } },
+  { field: 'createTime', label: $t('log.loginTime'), columnProps: { width: 170 } },
+];
+const [registerOperation, operationTable] = useTable({
+  title: $t('log.operationLog'),
+  columns: operationColumns,
+  indexColumn: false,
+  searchForm: { subItems: ['username', 'module', 'action', 'status'], limit: 2 },
+  apis: { query: logApi.getOperationLogList.bind(logApi) },
+  attrs: {
+    onReload: () => operationTable.reload(),
+    pageTransform: ({ current, size }) => ({ page: current, pageSize: size }),
+    resultTransform: (response) => ({
       records: response.list,
       total: response.total,
-      current: Number(params.current ?? 1),
-      size: Number(params.pageSize ?? 10),
-    };
-  } catch (error: unknown) {
-    console.error(t('log.loadOperationLogFailed'), (error as Error).message);
-  }
-  return {
-    records: [],
-    total: 0,
-    current: Number(params.current ?? 1),
-    size: Number(params.pageSize ?? 10),
-  };
-};
-
-const loadLoginLogs = async (params: Record<string, unknown>, config?: RequestConfig) => {
-  try {
-    const response = await logApi.getLoginLogList(
+      current: response.current ?? response.page,
+      size: response.pageSize
+    })
+  },
+  buttons: {
+    actions: [
       {
-        username: params.username as string,
-        ip: params.ip as string,
-        status: params.status as string,
-        page: params.current as number,
-        pageSize: params.pageSize as number,
-      },
-      config,
-    );
-
-    return {
+        label: $t('log.clearLog'),
+        attrs: { danger: true },
+        confirmText: $t('log.confirmClearOperation'),
+        onClick: async () => {
+          await logApi.clearOperationLog();
+          message.success($t('log.clearSuccess'));
+          await operationTable.query();
+        }
+      }
+    ]
+  },
+});
+const [registerLogin, loginTable] = useTable({
+  title: $t('log.loginLog'),
+  columns: loginColumns,
+  indexColumn: false,
+  searchForm: { subItems: ['username', 'ip', 'status'], limit: 2 },
+  apis: { query: logApi.getLoginLogList.bind(logApi) },
+  attrs: {
+    onReload: () => loginTable.reload(),
+    pageTransform: ({ current, size }) => ({ page: current, pageSize: size }),
+    resultTransform: (response) => ({
       records: response.list,
       total: response.total,
-      current: Number(params.current ?? 1),
-      size: Number(params.pageSize ?? 10),
-    };
-  } catch (error: unknown) {
-    console.error(t('log.loadLoginLogFailed'), (error as Error).message);
-  }
-  return {
-    records: [],
-    total: 0,
-    current: Number(params.current ?? 1),
-    size: Number(params.pageSize ?? 10),
-  };
-};
-
-const handleClearOperationLog = () => {
-  Modal.confirm({
-    title: t('log.confirmClear'),
-    content: t('log.confirmClearOperation'),
-    okType: 'danger',
-    onOk: async () => {
-      try {
-        await logApi.clearOperationLog();
-
-        message.success(t('log.clearSuccess'));
-        operationRefreshKey.value++;
-      } catch (_error: unknown) {
-        // 校验由表单展示，请求错误由统一 Service Hooks 反馈。
+      current: response.current ?? response.page,
+      size: response.pageSize
+    })
+  },
+  buttons: {
+    actions: [
+      {
+        label: $t('log.clearLog'),
+        attrs: { danger: true },
+        confirmText: $t('log.confirmClearLogin'),
+        onClick: async () => {
+          await logApi.clearLoginLog();
+          message.success($t('log.clearSuccess'));
+          await loginTable.query();
+        }
       }
-    },
-  });
-};
-
-const handleClearLoginLog = () => {
-  Modal.confirm({
-    title: t('log.confirmClear'),
-    content: t('log.confirmClearLogin'),
-    okType: 'danger',
-    onOk: async () => {
-      try {
-        await logApi.clearLoginLog();
-
-        message.success(t('log.clearSuccess'));
-        loginRefreshKey.value++;
-      } catch (_error: unknown) {
-        // 校验由表单展示，请求错误由统一 Service Hooks 反馈。
-      }
-    },
-  });
-};
-
-const nativeQuery1 = useTableParams(() => operationColumns.value);
-const nativeQuery2 = useTableParams(() => loginColumns.value);
-
-import { useTableParams } from '@/composables/useTableParams';
-
-const operationTableRef = ref<{ reload: () => Promise<unknown> }>();
-const loginTableRef = ref<{ reload: () => Promise<unknown> }>();
+    ]
+  },
+});
 </script>
 
 <style scoped lang="scss">

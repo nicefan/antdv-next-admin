@@ -1,69 +1,12 @@
 <template>
   <div class="page-container">
-    <SuperTable
-      ref="nativeTableRef1"
-      :schema="{
-        slots: { bodyCell: 'bodyCell' },
-        columns: columns,
-        apis: { query: loadFileList },
-        searchForm: { subItems: searchFormItems, limit: 2 },
-        indexColumn: false,
-        title: {
-          title: t('file.title'),
-          actions: [],
-        }.title,
-        attrs: {
-          pagination: {},
-          filterSortTransform: nativeQuery1.filterSortTransform,
-          tableTools: undefined,
-          onReload: () => nativeTableRef1?.reload(),
-        },
-      }"
-      :key="refreshKey"
-    >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'originalName'">
-          <div class="file-name">
-            <span class="file-icon" :style="{ color: getExtColor(record.ext) }">
-              <FileImageOutlined v-if="isImage(record.ext)" />
-              <VideoCameraOutlined v-else-if="isVideo(record.ext)" />
-              <FilePdfOutlined v-else-if="record.ext === 'pdf'" />
-              <FileExcelOutlined v-else-if="['xlsx', 'xls'].includes(record.ext)" />
-              <FileWordOutlined v-else-if="['docx', 'doc'].includes(record.ext)" />
-              <FilePptOutlined v-else-if="['pptx', 'ppt'].includes(record.ext)" />
-              <FileZipOutlined v-else-if="['zip', 'rar', '7z'].includes(record.ext)" />
-              <FileTextOutlined v-else />
-            </span>
-            <span>{{ record.originalName }}</span>
-          </div>
-        </template>
-        <template v-if="column.key === 'size'">
-          {{ formatSize(record.size) }}
-        </template>
-        <template v-if="column.key === 'storage'">
-          <a-tag :color="storageColor[record.storage]">{{
-            t(`file.storageType.${record.storage}`)
-          }}</a-tag>
-        </template>
-        <template v-if="column.key === 'action'">
-          <a-space :size="4">
-            <a-button type="link" size="small" danger @click="handleDelete(record)">
-              <template #icon><DeleteOutlined /></template>
-              {{ t('file.delete') }}
-            </a-button>
-          </a-space>
-        </template>
-      </template>
-    </SuperTable>
+    <SuperTable @register="register" />
   </div>
 </template>
 
 <script setup lang="ts">
-import type { SysFile } from '@/types/file';
-import type { UniOption, ExtColumnsItem } from 'superform-antdv';
-
+import type { ExtColumnsItem } from 'superform-antdv';
 import {
-  DeleteOutlined,
   FileImageOutlined,
   VideoCameraOutlined,
   FilePdfOutlined,
@@ -71,167 +14,132 @@ import {
   FileWordOutlined,
   FilePptOutlined,
   FileZipOutlined,
-  FileTextOutlined,
+  FileTextOutlined
 } from '@antdv-next/icons';
-import { message, Modal } from 'antdv-next';
-import { SuperTable } from 'superform-antdv';
-import { ref, computed } from 'vue';
-import { useI18n } from 'vue-i18n';
-
+import { Tag, message } from 'antdv-next';
+import { SuperTable, useTable } from 'superform-antdv';
+import { h } from 'vue';
 import { fileApi } from '@/api/generated/admin/File';
-const { t } = useI18n();
-const refreshKey = ref(0);
-
-const storageColor: Record<string, string> = {
-  local: 'default',
-  oss: 'blue',
-  cos: 'green',
-};
-
-const isImage = (ext: string) => ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext);
-const isVideo = (ext: string) => ['mp4', 'avi', 'mov', 'wmv'].includes(ext);
-
-const getExtColor = (ext: string) => {
-  const colors: Record<string, string> = {
-    jpg: '#f5222d',
-    jpeg: '#f5222d',
-    png: '#fa541c',
-    gif: '#fa8c16',
-    svg: '#a0d911',
-    pdf: '#cf1322',
-    docx: '#1677ff',
-    doc: '#1677ff',
-    xlsx: '#52c41a',
-    xls: '#52c41a',
-    pptx: '#fa541c',
-    ppt: '#fa541c',
-    zip: '#faad14',
-    rar: '#faad14',
-    mp4: '#722ed1',
-    txt: '#8c8c8c',
+import { $t } from '@/locales';
+const isImage =(ext: string) => ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext);
+const isVideo =(ext: string) => ['mp4', 'avi', 'mov', 'wmv'].includes(ext);
+const getExtColor =(ext: string) => {
+  const colors: Record<string,
+  string> = {
+    jpg:'#f5222d',
+    jpeg:'#f5222d',
+    png:'#fa541c',
+    gif:'#fa8c16',
+    svg:'#a0d911',
+    pdf:'#cf1322',
+    docx:'#1677ff',
+    doc:'#1677ff',
+    xlsx:'#52c41a',
+    xls:'#52c41a',
+    pptx:'#fa541c',
+    ppt:'#fa541c',
+    zip:'#faad14',
+    rar:'#faad14',
+    mp4:'#722ed1',
+    txt:'#8c8c8c',
   };
   return colors[ext] || '#8c8c8c';
 };
-
-const formatSize = (bytes: number) => {
+const formatSize =(bytes: number) => {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-  return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+  return(bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
 };
-
-const searchFormItems = computed<UniOption[]>(() => [
-  { type: 'Input', field: 'originalName', label: () => t('file.fileName') },
+const storageColors: Record<string, string> = { local: 'default', oss: 'blue', cos: 'green' };
+const storageOptions = ['local', 'oss', 'cos'].map((value) => ({ label: $t(`file.storageType.${value}`), value }));
+const extOptions = [
+  ['jpg', 'imageJpg'],
+  ['png', 'imagePng'],
+  ['pdf', 'pdf'],
+  ['docx', 'word'],
+  ['xlsx', 'excel'],
+  ['zip', 'zip'],
+  ['mp4', 'video'],
+  ['txt', 'text'],
+  ['pptx', 'ppt'],
+  ['svg', 'svg'],
+].map(([value, label]) => ({ value, label: $t(`file.extType.${label}`) }));
+const columns: ExtColumnsItem[] = [
+  {
+    type: 'Input',
+    field: 'originalName',
+    label: $t('file.fileName'),
+    columnProps: { ellipsis: true },
+    viewRender: ({ record, text }) => {
+      const ext = record.ext;
+      const icon = isImage(ext) ? FileImageOutlined : isVideo(ext) ? VideoCameraOutlined : ext === 'pdf' ? FilePdfOutlined
+      :['xlsx', 'xls'].includes(ext) ? FileExcelOutlined : ['docx', 'doc'].includes(ext) ? FileWordOutlined
+      :['pptx', 'ppt'].includes(ext) ? FilePptOutlined : ['zip', 'rar', '7z'].includes(ext) ? FileZipOutlined : FileTextOutlined;
+      return h('div', { class: 'file-name' }, [
+        h('span', { class: 'file-icon', style: { color: getExtColor(ext) } }, [h(icon)]),
+        h('span', text)
+      ]);
+    }
+  },
   {
     type: 'Select',
     field: 'ext',
-    label: () => t('file.ext'),
-    options: {
-      source: () => [
-        { label: t('file.extType.imageJpg'), value: 'jpg' },
-        { label: t('file.extType.imagePng'), value: 'png' },
-        { label: t('file.extType.pdf'), value: 'pdf' },
-        { label: t('file.extType.word'), value: 'docx' },
-        { label: t('file.extType.excel'), value: 'xlsx' },
-        { label: t('file.extType.zip'), value: 'zip' },
-        { label: t('file.extType.video'), value: 'mp4' },
-        { label: t('file.extType.text'), value: 'txt' },
-        { label: t('file.extType.ppt'), value: 'pptx' },
-        { label: t('file.extType.svg'), value: 'svg' },
-      ],
-    },
+    label: $t('file.ext'),
+    options: { source: extOptions },
+    viewRender: ({ text }) => text,
+    columnProps: { width: 90 }
+  },
+  {
+    field: 'size',
+    label: $t('file.size'),
+    viewRender: ({ text }) => formatSize(text),
+    columnProps: { width: 120 }
   },
   {
     type: 'Select',
     field: 'storage',
-    label: () => t('file.storage'),
-    options: {
-      source: () => [
-        { label: t('file.storageType.local'), value: 'local' },
-        { label: t('file.storageType.oss'), value: 'oss' },
-        { label: t('file.storageType.cos'), value: 'cos' },
-      ],
-    },
+    label: $t('file.storage'),
+    options: { source: storageOptions },
+    columnProps: { width: 100 },
+    viewRender: ({ text }) => h(Tag, { color: storageColors[text] }, () => storageOptions.find((option) => option.value === text)?.label || text)
   },
-]);
-
-const columns = computed<ExtColumnsItem[]>(() => [
-  {
-    field: 'originalName',
-    label: () => t('file.fileName'),
-    columnProps: { key: 'originalName', ellipsis: true },
-  },
-  { field: 'ext', label: () => t('file.ext'), columnProps: { key: 'ext', width: 90 } },
-  { field: 'size', label: () => t('file.size'), columnProps: { key: 'size', width: 120 } },
-  { field: 'storage', label: () => t('file.storage'), columnProps: { key: 'storage', width: 100 } },
-  {
-    field: 'uploader',
-    label: () => t('file.uploader'),
-    columnProps: { key: 'uploader', width: 100 },
-  },
-  {
-    field: 'createTime',
-    label: () => t('file.uploadTime'),
-    columnProps: { key: 'createTime', width: 180 },
-  },
-  {
-    field: 'action',
-    label: () => t('file.action'),
-    columnProps: { key: 'action', width: 100, fixed: 'right' },
-  },
-]);
-
-const loadFileList = async (params: Record<string, unknown>, config?: RequestConfig) => {
-  try {
-    const response = await fileApi.getFileList(
-      {
-        name: params.originalName as string,
-        ext: params.ext as string,
-        storage: params.storage as string,
-        page: params.current as number,
-        pageSize: params.pageSize as number,
-      },
-      config,
-    );
-
-    return {
+  { field: 'uploader', label: $t('file.uploader'), columnProps: { width: 100 } },
+  { field: 'createTime', label: $t('file.uploadTime'), columnProps: { width: 180 } },
+];
+const [register, table] = useTable({
+  title: $t('file.title'),
+  columns,
+  indexColumn: false,
+  searchForm: { subItems: ['originalName', 'ext', 'storage'], limit: 2 },
+  attrs: {
+    rowKey: 'id',
+    onReload: () => table.reload(),
+    pageTransform: ({ current, size }) => ({ page: current, pageSize: size }),
+    resultTransform: (response) => ({
       records: response.list,
       total: response.total,
-      current: Number(params.current ?? 1),
-      size: Number(params.pageSize ?? 10),
-    };
-  } catch (error: unknown) {
-    console.error(t('file.loadFailed'), (error as Error).message);
-  }
-  return {
-    records: [],
-    total: 0,
-    current: Number(params.current ?? 1),
-    size: Number(params.pageSize ?? 10),
-  };
-};
-
-const handleDelete = (record: SysFile) => {
-  Modal.confirm({
-    title: t('file.confirmDelete'),
-    content: t('file.confirmDeleteContent', { name: record.originalName }),
-    onOk: async () => {
-      try {
-        await fileApi.deleteFile(record.id);
-
-        message.success(t('file.deleteSuccess'));
-        refreshKey.value++;
-      } catch (_error: unknown) {
-        // 校验由表单展示，请求错误由统一 Service Hooks 反馈。
+      current: response.current ?? response.page,
+      size: response.pageSize
+    })
+  },
+  beforeQuery: ({ originalName, ...params }) => ({ ...params, name: originalName }),
+  apis: {
+    query: fileApi.getFileList.bind(fileApi),
+    delete: async (keys: string[]) => {
+      await Promise.all(keys.map((id) => fileApi.deleteFile(id)));
+      message.success($t('file.deleteSuccess'));
+    }
+  },
+  rowButtons: {
+    actions: [
+      {
+        name: 'delete',
+        confirmText: ({ record }) => $t('file.confirmDeleteContent', { name: record.originalName })
       }
-    },
-  });
-};
-
-const nativeTableRef1 = ref<{ reload: () => Promise<unknown> }>();
-const nativeQuery1 = useTableParams(() => columns.value);
-
-import { useTableParams } from '@/composables/useTableParams';
+    ]
+  },
+});
 </script>
 
 <style scoped lang="scss">
