@@ -81,14 +81,13 @@
                 slots: { bodyCell: 'bodyCell' },
                 columns: childColumns,
                 apis: { query: loadChildDepts },
-                params: nativeQuery1.params,
-                pagination: false,
                 indexColumn: false,
                 title: {
                   title: `${t('dept.childDepts')} (${childDepts.length})`,
                 }.title,
                 attrs: {
-                  onChange: nativeQuery1.onChange,
+                  pagination: false,
+                  filterSortTransform: nativeQuery1.filterSortTransform,
                   tableTools: undefined,
                   onReload: () => nativeTableRef1?.reload(),
                 },

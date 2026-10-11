@@ -6,13 +6,12 @@
         slots: { extra: 'extra' },
         columns: columns,
         apis: { query: fetchTableData },
-        params: nativeQuery1.params,
         searchForm: { subItems: searchFormItems, limit: undefined },
-        pagination: false,
         indexColumn: false,
         title: toolbarConfig.title,
         attrs: {
-          onChange: nativeQuery1.onChange,
+          pagination: false,
+          filterSortTransform: nativeQuery1.filterSortTransform,
           tableTools: 'actions' in toolbarConfig ? toolbarConfig.actions : undefined,
           onReload: () => tableRef?.reload(),
           rowKey: 'id',
@@ -220,7 +219,7 @@ const searchFormItems = computed<UniOption[]>(() => [
 ]);
 
 const columns = computed((): ExtColumnsItem[] => [
-  { field: 'keyword', label: () => $t('common.search'), hideInTable: true },
+  { field: 'keyword', label: () => $t('common.search'), exclude: ['table'] },
   {
     field: 'name',
     label: () => $t('permission.name'),

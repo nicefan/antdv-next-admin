@@ -1,18 +1,15 @@
-import superForm, { registerComponents, configure } from 'superform-antdv';
+import superForm, { registerComponents, configure, enUS, zhCN } from 'superform-antdv';
 import { fieldComponents } from 'superform-antdv/components';
-import { computed, defineAsyncComponent } from 'vue';
+import { defineAsyncComponent } from 'vue';
 
 import RemoteSelect from '@/components/Fields/RemoteSelect/index.vue';
 import I18nInput from '@/components/I18nInput/index.vue';
 import IconPicker from '@/components/IconPicker/index.vue';
 import JsonInput from '@/components/JsonInput/index.vue';
-import {
-  renderNativeForm,
-  renderNativeTable,
-  renderNativeModal,
-} from '@/components/Native/Table/adapter';
+import { renderNativeForm, renderNativeTable } from '@/components/Native/Table/adapter';
 import { renderNativeUpload } from '@/components/Native/Upload';
-import { $t } from '@/locales';
+import { getLocale } from '@/locales';
+import NativeModal from '@/components/Native/Modal/index.vue';
 import { appDefaultSettings } from '@/settings';
 import { useAuthStore } from '@/stores/auth';
 import { useDictStore } from '@/stores/dict';
@@ -21,17 +18,25 @@ export function setupSuperForm(): void {
   superForm.initialize({
     components: fieldComponents,
     overrides: {
+      uiComponents: {
+        modal: {
+          component: NativeModal,
+          // 组件覆盖须显式映射 Core 的弹窗协议；原生上下文 service 继续沿用官方实现。
+          adaptProps: ({ visible, 'onUpdate:visible': onVisibleChange, destroyOnClose, ...attrs }) => ({
+            ...attrs,
+            open: visible,
+            destroyOnHidden: destroyOnClose,
+            'onUpdate:open': onVisibleChange,
+          }),
+        },
+      },
       render: {
         form: renderNativeForm,
         table: renderNativeTable,
-        modal: renderNativeModal,
         upload: renderNativeUpload,
       },
     },
   });
-  // 动态标签只负责显示，输入提示使用响应式文案，避免标签函数被拼接为字符串。
-  const inputPlaceholder = computed(() => $t('proForm.enterPlaceholder', { label: '' }).trim());
-  const selectPlaceholder = computed(() => $t('proForm.selectPlaceholder', { label: '' }).trim());
   registerComponents({
     JsonInput,
     I18nInput,
@@ -51,15 +56,13 @@ export function setupSuperForm(): void {
       permissions.includes = (permission: string) => auth.hasPermission(permission);
       return permissions;
     },
-    tableApiSetting: { currentField: 'current', sizeField: 'pageSize' },
+    locale: getLocale() === 'en-US' ? enUS : zhCN,
     defaultProps: {
+      SuperTable: {
+        pageTransform: ({ current, size }) => ({ current, pageSize: size }),
+      },
       Table: { size: appDefaultSettings.table.size, bordered: appDefaultSettings.table.bordered },
-      Input: { placeholder: inputPlaceholder },
-      InputPassword: { placeholder: inputPlaceholder },
-      TextArea: { placeholder: inputPlaceholder },
-      InputNumber: { placeholder: inputPlaceholder },
-      Select: { placeholder: selectPlaceholder, allowClear: appDefaultSettings.select.allowClear },
-      TreeSelect: { placeholder: selectPlaceholder },
+      Select: { allowClear: appDefaultSettings.select.allowClear },
       DatePicker: { valueFormat: undefined, allowClear: appDefaultSettings.datePicker.allowClear },
       DateRangePicker: {
         valueFormat: undefined,

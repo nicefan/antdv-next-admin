@@ -46,14 +46,13 @@
             slots: { extra: 'extra', bodyCell: 'bodyCell' },
             columns: columns,
             apis: { query: loadData },
-            params: nativeQuery1.params,
-            pagination: {},
             indexColumn: false,
             title: {
               title: t('dict.dictDataTitle', { name: selectedTypeName }),
             }.title,
             attrs: {
-              onChange: nativeQuery1.onChange,
+              pagination: {},
+              filterSortTransform: nativeQuery1.filterSortTransform,
               tableTools: undefined,
               onReload: () => nativeTableRef1?.reload(),
             },

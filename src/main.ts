@@ -5,7 +5,7 @@ import { service } from './api/service/transport';
 import App from './App.vue';
 import { registerDefaultComponentProps } from './components/Global/defaultComponentProps';
 import { setupDirectives } from './directives';
-import i18n from './locales';
+import i18n, { getLocale, loadLocaleMessages } from './locales';
 import router from './router';
 import { setupSuperForm } from './setupSuperForm';
 import { useMenuPreferencesStore } from './stores/menuPreferences';
@@ -33,6 +33,9 @@ function restoreGitHubPagesRedirect() {
 }
 
 async function bootstrap() {
+  // 固定 Schema 文案在 setup 初始化，先加载已保存语言再挂载页面。
+  await loadLocaleMessages(getLocale());
+
   if (import.meta.env.VITE_DEMO_MODE === 'true') {
     const { setupBrowserMock } = await import('./mock/browser');
     setupBrowserMock(service);

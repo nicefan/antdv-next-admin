@@ -42,9 +42,9 @@
         :schema="{
           slots: { bodyCell: 'bodyCell' },
           columns: columns,
-          pagination: false,
           indexColumn: false,
           attrs: {
+            pagination: false,
             tableTools: false,
             rowKey: 'id',
             size: 'small',

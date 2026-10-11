@@ -8,9 +8,8 @@
         :schema="{
           slots: { bodyCell: 'bodyCell' },
           columns: columns,
-          pagination: { pageSize: 8 },
           indexColumn: false,
-          attrs: { tableTools: false, rowKey: 'id', onRow: buildRowProps },
+          attrs: { pagination: { pageSize: 8 }, tableTools: false, rowKey: 'id', onRow: buildRowProps },
         }"
         :data-source="listData"
       >

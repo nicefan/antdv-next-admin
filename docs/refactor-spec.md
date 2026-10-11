@@ -144,3 +144,17 @@ node D:/work/api-datamodel/codegen/main.js demo --config api-datamodel.config.mj
 | 验证 | 记录实际执行项和未验证项；语法检查不替代类型或运行验证 |
 
 用户未明确授权时，不主动安装依赖、修改单元测试、运行测试或构建。静态清点与差异检查可以用于核对范围，但不能据此声称运行功能已验证。
+
+
+## next-dev API 适配（2026-10-11）
+
+依赖基准：`nicefan/antdv-superform` 的 `next-dev`，提交 `ff912d3`。
+
+- 全部业务和示例的 SuperTable 分页迁移至 `attrs.pagination`；全局使用 `defaultProps.SuperTable.pageTransform` 保留后端 `current/pageSize` 契约。
+- 表头条件通过 `attrs.filterSortTransform` 交给 Core 保存和查询，不再维护另一份响应式 params 或从原生事件调度查询。
+- Table 扩展直接消费公开 UI 状态协议，转换原生列 render、选择、展开和统一变更事件；不依赖官方渲染结果的内部 VNode 结构。
+- Modal 使用固定 UI 组件覆盖及显式属性适配；Form 保留动态 Ref 解包；Upload 保留原生拖拽增强。
+- 补充原生扩展公开属性类型，替换废弃的 `hideInTable`；表格示例的编辑字段直接复用 columns。
+- 初始化接入内置中文/英文文案，移除覆盖所有字段的空标签占位符；启动前等待已保存语言加载，切换语言按长期约定持久化后刷新。
+
+本次只进行了源码 API 对照与 `git diff --check`，差异检查通过。当前环境无项目依赖和本地产品包 dist；未安装依赖，未执行类型检查、测试、构建或浏览器验收。此前机器上的检查记录不代表本次改动通过。

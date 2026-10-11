@@ -14,4 +14,6 @@
 
 旧 Pro 目录及其表单、表格配置转换已移除。外部原生 Table 和 Modal 增强通过 Adapter overrides 注册；它们不拥有另一套业务请求或表单状态。
 
+当前适配基于 `antdv-superform/next-dev`（`ff912d3`）。分页使用 `attrs.pagination`，筛选与排序使用 `attrs.filterSortTransform`；表格扩展消费公开状态协议，Modal 使用 `uiComponents` 覆盖。
+
 完整使用方式以 [本地依赖指南](../AI_GUIDE.md) 为准。类型检查与运行验证不同，实际验证记录见改造规范。

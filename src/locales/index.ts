@@ -61,16 +61,6 @@ const i18n = createI18n({
 document.documentElement.lang = savedLocale;
 dayjs.locale(DAYJS_LOCALE_MAP[savedLocale]);
 
-function setCurrentLocale(locale: SupportedLocale) {
-  dayjs.locale(DAYJS_LOCALE_MAP[locale]);
-  const currentLocale = i18n.global.locale as string | LocaleRefLike;
-  if (typeof currentLocale === 'string') {
-    (i18n.global as unknown as { locale: string }).locale = locale;
-    return;
-  }
-  currentLocale.value = locale;
-}
-
 function getCurrentLocale(): string {
   const currentLocale = i18n.global.locale as string | LocaleRefLike;
   return typeof currentLocale === 'string' ? currentLocale : currentLocale.value;
@@ -87,8 +77,6 @@ export async function loadLocaleMessages(locale: string): Promise<SupportedLocal
   loadedLocales.add(targetLocale);
   return targetLocale;
 }
-
-void loadLocaleMessages(savedLocale);
 
 type TranslateLike = (key: string, ...args: unknown[]) => unknown;
 
@@ -108,12 +96,11 @@ export default i18n;
 
 // Helper function to change locale
 export async function setLocale(locale: string) {
-  const targetLocale = await loadLocaleMessages(locale);
-  setCurrentLocale(targetLocale);
+  const targetLocale = normalizeLocale(locale);
+  if (targetLocale === getCurrentLocale()) return;
+  // 刷新后统一初始化页面 Schema、固定选项及 SuperForm 内置文案。
   localStorage.setItem('app-locale', targetLocale);
-
-  // Update HTML lang attribute
-  document.documentElement.lang = targetLocale;
+  window.location.reload();
 }
 
 export function getLocale() {

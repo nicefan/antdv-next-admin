@@ -120,9 +120,8 @@
       <SuperTable
         :schema="{
           columns: columns,
-          pagination: false,
           indexColumn: false,
-          attrs: { tableTools: false, rowKey: 'id', size: 'small' },
+          attrs: { pagination: false, tableTools: false, rowKey: 'id', size: 'small' },
         }"
         :data-source="previewRows"
       />

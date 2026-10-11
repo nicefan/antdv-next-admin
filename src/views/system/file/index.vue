@@ -6,16 +6,15 @@
         slots: { bodyCell: 'bodyCell' },
         columns: columns,
         apis: { query: loadFileList },
-        params: nativeQuery1.params,
         searchForm: { subItems: searchFormItems, limit: 2 },
-        pagination: {},
         indexColumn: false,
         title: {
           title: t('file.title'),
           actions: [],
         }.title,
         attrs: {
-          onChange: nativeQuery1.onChange,
+          pagination: {},
+          filterSortTransform: nativeQuery1.filterSortTransform,
           tableTools: undefined,
           onReload: () => nativeTableRef1?.reload(),
         },

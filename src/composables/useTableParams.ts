@@ -1,8 +1,5 @@
 import type { HeaderFilter } from '@/components/Native/Table/types';
-import type { TableEmits } from 'antdv-next';
-import type { ExtColumnsItem } from 'superform-antdv';
-
-import { ref } from 'vue';
+import type { ExtColumnsItem, UITableParams } from 'superform-antdv';
 
 export function useTableParams(
   columns: () => ExtColumnsItem[],
@@ -12,9 +9,8 @@ export function useTableParams(
     defaultMode?: 'client' | 'server' | 'hybrid';
   },
 ) {
-  const params = ref<Record<string, unknown>>({});
-  const onChange: TableEmits['change'] = (_pagination, filters, sorter, extra) => {
-    if (extra.action === 'paginate') return;
+  // 只转换请求契约；条件快照、查询调度和导出参数由 SuperTable 管理。
+  const filterSortTransform = ({ filters, sorters }: UITableParams): Record<string, unknown> => {
     const next: Record<string, unknown> = {};
     const nested: Record<string, unknown> = {};
     for (const column of columns()) {
@@ -23,7 +19,7 @@ export function useTableParams(
         | undefined;
       const filter = native?.headerFilter;
       if (!filter || (filter.mode ?? options?.defaultMode) === 'client') continue;
-      const values = filters[native?.key ?? column.field ?? ''];
+      const values = filters[column.field ?? native?.key ?? ''];
       if (!values?.length) continue;
       const value = filter.transformRequestValue
         ? filter.transformRequestValue(values[0], values)
@@ -34,13 +30,16 @@ export function useTableParams(
         filter.paramKey ?? column.field ?? ''
       ] = value;
     }
-    if (options?.requestPayload === 'nested') next[options.nestedKey ?? 'filters'] = nested;
-    const list = (Array.isArray(sorter) ? sorter : [sorter])
-      .filter((item) => item.field && item.order)
-      .map((item) => ({ field: item.field, order: item.order }));
-    if (list.length) next.sorter = Array.isArray(sorter) ? list : list[0];
-    params.value = next;
+    if (options?.requestPayload === 'nested' && Object.keys(nested).length) {
+      next[options.nestedKey ?? 'filters'] = nested;
+    }
+    // 后端保留 AntDV 排序值；Core 使用 asc/desc，仅在契约边界映射。
+    const sorter = sorters.map(({ field, order }) => ({
+      field,
+      order: order === 'asc' ? 'ascend' : 'descend',
+    }));
+    if (sorter.length) next.sorter = sorter.length === 1 ? sorter[0] : sorter;
+    return next;
   };
-  // 新业务监听独立扩展事件；保留 onChange 供已有页面逐步迁移。
-  return { params, onFilterChange: onChange, onSortChange: onChange, onChange };
+  return { filterSortTransform };
 }

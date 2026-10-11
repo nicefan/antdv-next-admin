@@ -65,9 +65,8 @@
       <SuperTable
         :schema="{
           columns: dataColumns,
-          pagination: { pageSize: 8 },
           indexColumn: false,
-          attrs: { tableTools: false, rowKey: 'code', size: 'small' },
+          attrs: { pagination: { pageSize: 8 }, tableTools: false, rowKey: 'code', size: 'small' },
         }"
         :data-source="rows"
       />
@@ -77,9 +76,8 @@
       <SuperTable
         :schema="{
           columns: errorColumns,
-          pagination: { pageSize: 6 },
           indexColumn: false,
-          attrs: { tableTools: false, rowKey: 'id', size: 'small' },
+          attrs: { pagination: { pageSize: 6 }, tableTools: false, rowKey: 'id', size: 'small' },
         }"
         :data-source="importErrors"
       />

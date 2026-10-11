@@ -6,9 +6,20 @@
 
 ## 本地运行
 
-本仓库通过 `file:../antdv-superform/packages/superform-antdv` 使用本地 SuperForm 包，因此需将两个仓库放在同一父目录。当前目录是 `D:/antdv-next-admin`，本地依赖位于 `D:/antdv-superform`。
+本仓库通过 `file:../antdv-superform/packages/superform-antdv` 使用本地 SuperForm 包，因此需将两个仓库放在同一父目录。依赖仓库必须使用 `next-dev` 分支；本次适配基于提交 `ff912d3`。不要使用 main 分支的旧产物。
 
-已安装依赖时直接执行：
+首次准备环境时，先在同级目录准备依赖源码与产品包产物（以下命令由开发者执行）：
+
+~~~sh
+git clone --branch next-dev --single-branch https://github.com/nicefan/antdv-superform.git
+cd antdv-superform
+pnpm install
+pnpm --filter superform-antdv build
+cd ../antdv-next-admin
+pnpm install
+~~~
+
+已有依赖时确认 `superform-antdv/dist` 来自上述分支，直接执行：
 
 ~~~sh
 pnpm dev
@@ -70,7 +81,7 @@ async function query(params: Record<string, unknown>, config?: RequestConfig) {
   :schema="{
     columns,
     apis: { query },
-    pagination: {},
+    attrs: { pagination: {} },
     searchForm: { subItems: [{ type: 'Input', field: 'username', label: '用户名' }] },
   }"
 />
@@ -86,14 +97,18 @@ async function query(params: Record<string, unknown>, config?: RequestConfig) {
 
 `src/setupSuperForm.ts` 是统一入口：
 
-- Table 覆盖先调用官方 Adapter，保留列渲染、选择、展开和分页的转换，再替换最终原生组件。
-- Modal 覆盖使用外部增强组件；拖拽、缩放和全屏属于原生交互。
+- Table 覆盖消费公开的 `UITableRenderProps`，转换原生列渲染、选择、展开、分页和变更事件后交给增强组件；不读取官方 VNode 的内部结构。
+- Modal 通过 `overrides.uiComponents.modal` 接入外部增强组件，显式转换 visible/open 协议；官方上下文 service 保持有效。拖拽、缩放和全屏属于原生交互。
 - Form 覆盖解包当前本地包根表单的动态 Ref 属性，继续使用官方属性适配。
 - JsonInput、I18nInput、IconPicker、RemoteSelect、RemoteTreeSelect、CodeEditor 注册为字段。CodeEditor 使用 `modelValue / update:modelValue`，其他字段沿用 `value / update:value`。
 - 自定义字段公开 props 在 `src/types/superform.d.ts` 中声明，不依赖包内部路径。
 - 上传使用 SuperForm 原生 Upload，`dragger` 属性通过外部渲染覆盖切换原生 UploadDragger。示例采用提交上传模式，失败后再次提交可重试未成功文件；上传契约转换在 facade。
 
-本项目的 `columnProps.headerFilter` 是外部原生 Table 扩展属性。排序、筛选分别通过 Schema 的 `attrs.onSortChange`、`attrs.onFilterChange` 监听；参数均与原生 `onChange` 一致，顺序为 `pagination, filters, sorter, extra`，原生 `onChange` 仍原样触发。`useTableParams` 是可选的请求参数转换工具，新页面使用它的同名扩展事件处理器；请求仍交给 SuperTable 的 `params`。
+本项目的 `columnProps.headerFilter` 是外部原生 Table 扩展属性。`useTableParams().filterSortTransform` 放在 `attrs.filterSortTransform`，只负责转换后端参数；条件快照、回第一页、查询和导出参数由 SuperTable 管理。不要同时把筛选结果写入 `params` 或在原生事件内再次查询。`attrs.onChange`、`attrs.onFilterChange`、`attrs.onSortChange` 仍保留原生事件参数，供业务通知使用。client 模式只筛选当前数据；server 模式交给后端；hybrid 模式保留本地与远程筛选。
+
+分页放在 `attrs.pagination`；全局请求分页字段通过 `defaultProps.SuperTable.pageTransform` 映射。旧 `tableApiSetting` 与根级 `pagination` 不再使用。`useSectionStyle` 控制容器外观。内置文案使用库的中文/英文语言包，字段占位符沿用核心默认的标签提示。启动先加载已保存语言，语言切换持久化后整页刷新，以便 Schema 与内置文案统一初始化。
+
+表格示例使用同一份 `columns` 定义查询、编辑与详情，`exclude` 区分场景；`rowEditor.form` 仅配置布局。特殊业务确实需要独立字段时才声明 `subItems`。
 
 SuperTable 自行渲染标题栏，原生 Table 扩展无法直接获得根组件的 `title` 插槽。需要将工具栏放在标题右侧时，在 `slots: { title: 'title' }` 对应的插槽内提供元素挂载点，并通过 `attrs.toolbarTarget` 传入该元素的 Ref；扩展组件将工具栏传送到挂载点，不查找 DOM、不接管标题或业务按钮。完整用法见 `src/views/examples/table/index.vue`。未提供挂载点的已有页面暂保留原工具栏位置，`attrs.tableTools: false` 关闭工具栏。
 
